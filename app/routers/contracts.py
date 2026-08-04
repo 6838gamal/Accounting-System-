@@ -142,6 +142,20 @@ async def print_contract(request: Request, contract_id: int, db: Session = Depen
     })
 
 
+@router.get("/{contract_id}/layout-editor", response_class=HTMLResponse)
+async def layout_editor(request: Request, contract_id: int, db: Session = Depends(get_db)):
+    """محرر تخطيط العقد قبل الطباعة"""
+    if not request.session.get("user_id"):
+        return RedirectResponse(url="/auth/login", status_code=302)
+    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="العقد غير موجود")
+    company_settings = SettingsService(db).get_all()
+    return templates.TemplateResponse("contracts/layout_editor.html", {
+        "request": request, "contract": contract, "settings": company_settings
+    })
+
+
 @router.get("/{contract_id}/pdf")
 async def download_contract_pdf(request: Request, contract_id: int, db: Session = Depends(get_db)):
     """تنزيل العقد كملف PDF"""
