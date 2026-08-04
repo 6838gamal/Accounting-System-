@@ -587,6 +587,7 @@
                 <div class="signatures-row" id="signaturesRow">
                     <div class="sig-block">
                         <div class="sig-title" id="previewSig1Title">{{ settings.get('pdf_signatory_title', 'المدير العام') }}</div>
+                        <img id="previewStampImg" class="sig-img" style="display:none;max-height:80px;opacity:0.88">
                         <img id="previewSig1Img" class="sig-img" style="display:none">
                         <div class="sig-line" id="previewSig1Name">{{ settings.get('company_name', '') }}</div>
                     </div>
@@ -723,6 +724,25 @@
                    oninput="updateFooter(this.value)">
         </div>
 
+        <!-- Stamp -->
+        <div class="panel-section">
+            <div class="panel-section-title"><i class="bi bi-patch-check"></i> ختم الشركة</div>
+            <p style="font-size:11px;color:#64748b;margin:0 0 8px">يظهر في خانة توقيع الطرف الأول</p>
+            <div class="logo-upload-zone" id="stampZone">
+                <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" id="stampInput" onchange="handleStampUpload(event)">
+                <div id="stampPlaceholder" class="logo-placeholder">
+                    <i class="bi bi-cloud-upload"></i>
+                    انقر أو اسحب صورة الختم
+                </div>
+                <img id="stampEditorPreviewImg" class="logo-preview" style="display:none">
+            </div>
+            <div style="text-align:center">
+                <button class="btn-remove-logo" id="removeStampBtn" style="display:none" onclick="removeStamp()">
+                    <i class="bi bi-x-circle"></i> إزالة الختم
+                </button>
+            </div>
+        </div>
+
         <!-- Signature 1 -->
         <div class="panel-section">
             <div class="panel-section-title"><i class="bi bi-pen"></i> توقيع الطرف الأول</div>
@@ -804,6 +824,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (settingsLogo && settingsLogo.length > 10) {
         const src = settingsLogo.startsWith('data:') ? settingsLogo : 'data:image/png;base64,' + settingsLogo;
         showLogo(src);
+    }
+
+    const settingsStamp = `{{ settings.get('company_stamp', '') | safe }}`;
+    if (settingsStamp && settingsStamp.length > 10) {
+        const src = settingsStamp.startsWith('data:') ? settingsStamp : 'data:image/png;base64,' + settingsStamp;
+        showStamp(src);
     }
 });
 
@@ -899,6 +925,33 @@ function removeLogo() {
     document.getElementById('previewLogo').style.display = 'none';
     document.getElementById('previewLogo').src = '';
     document.getElementById('logoInput').value = '';
+}
+
+// ─────────────────────────────────────────────
+// Stamp
+// ─────────────────────────────────────────────
+function handleStampUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => showStamp(e.target.result);
+    reader.readAsDataURL(file);
+}
+function showStamp(src) {
+    document.getElementById('stampEditorPreviewImg').src = src;
+    document.getElementById('stampEditorPreviewImg').style.display = 'block';
+    document.getElementById('stampPlaceholder').style.display = 'none';
+    document.getElementById('removeStampBtn').style.display = 'inline-block';
+    document.getElementById('previewStampImg').src = src;
+    document.getElementById('previewStampImg').style.display = 'block';
+}
+function removeStamp() {
+    document.getElementById('stampEditorPreviewImg').style.display = 'none';
+    document.getElementById('stampPlaceholder').style.display = 'block';
+    document.getElementById('removeStampBtn').style.display = 'none';
+    document.getElementById('previewStampImg').style.display = 'none';
+    document.getElementById('previewStampImg').src = '';
+    document.getElementById('stampInput').value = '';
 }
 
 // ─────────────────────────────────────────────
