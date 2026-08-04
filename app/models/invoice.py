@@ -42,6 +42,7 @@ class Invoice(Base):
     # العلاقات
     client = relationship("Client", back_populates="invoices")
     contract = relationship("Contract", back_populates="invoices")
+    quotation = relationship("Quotation", foreign_keys=[quotation_id], lazy="joined")
     items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan", order_by="InvoiceItem.sort_order")
     payments = relationship("Payment", back_populates="invoice", lazy="dynamic")
 

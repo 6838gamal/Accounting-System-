@@ -26,10 +26,11 @@ app = FastAPI(
     docs_url="/api/docs" if settings.DEBUG else None,
 )
 
-# Middleware للجلسات
+# Middleware للجلسات — يستخدم SESSION_SECRET من البيئة إن وُجد، وإلا SECRET_KEY
+_session_key = settings.SESSION_SECRET or settings.SECRET_KEY
 app.add_middleware(
     SessionMiddleware,
-    secret_key=settings.SECRET_KEY,
+    secret_key=_session_key,
     max_age=settings.SESSION_MAX_AGE,
     https_only=False,
 )

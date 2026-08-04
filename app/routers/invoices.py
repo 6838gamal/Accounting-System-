@@ -44,9 +44,11 @@ async def new_invoice(request: Request, db: Session = Depends(get_db)):
     clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
     settings_svc = SettingsService(db)
     tax_rate = settings_svc.get("default_tax_rate", "15")
+    from datetime import date as _date
     return templates.TemplateResponse("invoices/form.html", {
         "request": request, "invoice": None, "clients": clients,
         "default_tax_rate": tax_rate, "error": None,
+        "today": _date.today(),
     })
 
 

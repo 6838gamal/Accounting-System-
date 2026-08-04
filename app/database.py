@@ -7,7 +7,7 @@ from app.config import settings
 
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    settings.SQLITE_URL,
     connect_args={"check_same_thread": False},
     echo=settings.DEBUG,
 )

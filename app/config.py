@@ -16,10 +16,11 @@ class Settings(BaseSettings):
 
     # الأمان
     SECRET_KEY: str = "change-this-in-production-to-a-long-random-string"
+    SESSION_SECRET: str = ""  # يُقرأ من متغير البيئة SESSION_SECRET إن وُجد
     SESSION_MAX_AGE: int = 60 * 60 * 8  # 8 ساعات
 
-    # قاعدة البيانات
-    DATABASE_URL: str = f"sqlite:///{BASE_DIR}/accounting.db"
+    # قاعدة البيانات (SQLite — مُعرَّف باسم مختلف لتجنب تعارض DATABASE_URL في البيئة)
+    SQLITE_URL: str = f"sqlite:///{BASE_DIR}/accounting.db"
 
     # الرفع
     UPLOAD_DIR: str = str(BASE_DIR / "uploads")
