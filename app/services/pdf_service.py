@@ -239,9 +239,27 @@ def _build_parties(elements, from_name: str, to_name: str, to_details: list,
 
 # ─── قسم التوقيعات ──────────────────────────────────────────────────────────
 
+def _get_stamp_image(settings: dict, size_cm=2.8) -> Image | None:
+    """تحميل ختم الشركة من الإعدادات"""
+    stamp_b64 = settings.get("company_stamp", "")
+    if not stamp_b64:
+        return None
+    try:
+        if "," in stamp_b64:
+            stamp_b64 = stamp_b64.split(",", 1)[1]
+        data = base64.b64decode(stamp_b64)
+        buf = BytesIO(data)
+        img = Image(buf, width=size_cm * cm, height=size_cm * cm)
+        img.hAlign = "CENTER"
+        return img
+    except Exception:
+        return None
+
+
 def _build_signatures(elements, party1_name: str, party1_title: str,
-                      party2_name: str, s: dict, page_width: float):
-    """مربعات التوقيع بتصميم واضح"""
+                      party2_name: str, s: dict, page_width: float,
+                      company_settings: dict | None = None):
+    """مربعات التوقيع بتصميم واضح — مع دعم ختم الشركة"""
     elements.append(Spacer(1, 1.2 * cm))
 
     title_style = ParagraphStyle(
@@ -253,7 +271,6 @@ def _build_signatures(elements, party1_name: str, party1_title: str,
         alignment=TA_CENTER, textColor=s["muted"], leading=13, wordWrap="RTL",
     )
 
-    sig_space = Paragraph(" ", ParagraphStyle("sp", fontSize=10, leading=38))
     line = Paragraph(
         "___________________________",
         ParagraphStyle("ln", fontName="Amiri", fontSize=9,
@@ -262,11 +279,20 @@ def _build_signatures(elements, party1_name: str, party1_title: str,
 
     half = (page_width - 0.8 * cm) / 2
 
-    def sig_cell(title, name, job_title=""):
+    # محاولة تحميل ختم الشركة
+    stamp_img = _get_stamp_image(company_settings) if company_settings else None
+
+    def sig_cell(title, name, job_title="", show_stamp=False):
         inner = [
             Paragraph(ar(title), title_style),
-            Spacer(1, 0.4 * cm),
-            sig_space,
+            Spacer(1, 0.3 * cm),
+        ]
+        if show_stamp and stamp_img:
+            inner.append(stamp_img)
+        else:
+            inner.append(Spacer(1, 2.8 * cm))  # مساحة فارغة لإضافة الختم يدوياً
+        inner += [
+            Spacer(1, 0.2 * cm),
             line,
             Spacer(1, 0.15 * cm),
             Paragraph(ar(name), name_style),
@@ -276,7 +302,7 @@ def _build_signatures(elements, party1_name: str, party1_title: str,
         return inner
 
     data = [[sig_cell("التوقيع والختم\n(الطرف الثاني - العميل)", party2_name),
-             sig_cell("التوقيع والختم\n(الطرف الأول)", party1_name, party1_title)]]
+             sig_cell("التوقيع والختم\n(الطرف الأول)", party1_name, party1_title, show_stamp=True)]]
 
     t = Table(data, colWidths=[half, half])
     t.setStyle(TableStyle([
@@ -564,6 +590,7 @@ def generate_contract_pdf(contract, company_settings: dict) -> bytes:
         company_settings.get("pdf_signatory_title", "المدير العام"),
         client.name if client else "",
         s, page_width,
+        company_settings=company_settings,
     )
 
     _build_footer(elements, company_settings, s)

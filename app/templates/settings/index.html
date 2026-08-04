@@ -117,7 +117,7 @@
                     <div class="row g-3 align-items-start">
 
                         <!-- شعار الشركة -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">شعار الشركة / المنشأة</label>
                             {% set logo = settings.get('company_logo', '') %}
                             {% if logo %}
@@ -142,8 +142,35 @@
                             </div>
                         </div>
 
+                        <!-- ختم الشركة -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">ختم الشركة / المنشأة</label>
+                            <p class="text-muted small mb-2">يظهر في خانة التوقيع بالعقود</p>
+                            {% set stamp = settings.get('company_stamp', '') %}
+                            {% if stamp %}
+                            <div class="mb-2 p-2 border rounded text-center" style="background:#f8fafc">
+                                <img src="{{ stamp }}" alt="الختم الحالي"
+                                     style="max-height:80px;max-width:100%;object-fit:contain;">
+                                <div class="mt-2">
+                                    <label class="d-flex align-items-center gap-2 justify-content-center small text-danger">
+                                        <input type="checkbox" name="remove_stamp" value="1" id="removeStamp">
+                                        حذف الختم الحالي
+                                    </label>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <input type="file" name="company_stamp_file" class="form-control"
+                                   accept="image/png,image/jpeg,image/jpg,image/webp"
+                                   id="stampInput">
+                            <div class="form-text">PNG أو JPG — حد أقصى 2MB (يُفضَّل خلفية شفافة)</div>
+                            <div id="stampPreview" class="mt-2 d-none">
+                                <img id="stampPreviewImg" src="" alt="معاينة الختم"
+                                     style="max-height:70px;max-width:100%;object-fit:contain;border-radius:6px;border:1px solid #e2e8f0">
+                            </div>
+                        </div>
+
                         <!-- لون العلامة التجارية -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">لون العلامة التجارية</label>
                             <p class="text-muted small mb-2">
                                 يُستخدم كلون رئيسي في جميع الوثائق (رأس الجدول، الحدود، الإجمالي…)
@@ -174,7 +201,7 @@
                         </div>
 
                         <!-- إعدادات نصية للوثائق -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">لقب الموقِّع الأول</label>
                                 <input type="text" name="pdf_signatory_title" class="form-control"
@@ -233,6 +260,18 @@ document.getElementById('logoInput').addEventListener('change', function(e) {
     reader.onload = function(ev) {
         document.getElementById('logoPreviewImg').src = ev.target.result;
         document.getElementById('logoPreview').classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+});
+
+// معاينة الختم قبل الرفع
+document.getElementById('stampInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        document.getElementById('stampPreviewImg').src = ev.target.result;
+        document.getElementById('stampPreview').classList.remove('d-none');
     };
     reader.readAsDataURL(file);
 });

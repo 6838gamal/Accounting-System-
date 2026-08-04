@@ -162,8 +162,25 @@
         .sig-box {
             flex: 1;
             text-align: center;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            background: #f8fafc;
         }
-        .sig-box .sig-label { font-weight: 600; color: #374151; margin-bottom: 48px; }
+        .sig-box .sig-label { font-weight: 600; color: #374151; margin-bottom: 16px; }
+        .sig-box .stamp-area {
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .sig-box .stamp-area img {
+            max-height: 90px;
+            max-width: 160px;
+            object-fit: contain;
+            opacity: 0.85;
+        }
         .sig-box .sig-line  {
             border-top: 1px solid #1e293b;
             padding-top: 6px;
@@ -269,11 +286,22 @@
     <!-- التوقيعات -->
     <div class="signatures">
         <div class="sig-box">
-            <div class="sig-label">توقيع الطرف الأول</div>
-            <div class="sig-line">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+            <div class="sig-label">توقيع الطرف الأول والختم</div>
+            <div class="stamp-area">
+                {% if settings.get('company_stamp') %}
+                <img src="{{ settings.get('company_stamp') }}" alt="ختم الشركة">
+                {% endif %}
+            </div>
+            <div class="sig-line">
+                {{ settings.get('company_name', 'اسم الشركة') }}
+                {% if settings.get('pdf_signatory_title') %}
+                <br><span style="font-size:11px">{{ settings.get('pdf_signatory_title') }}</span>
+                {% endif %}
+            </div>
         </div>
         <div class="sig-box">
-            <div class="sig-label">توقيع الطرف الثاني (العميل)</div>
+            <div class="sig-label">توقيع الطرف الثاني (العميل) والختم</div>
+            <div class="stamp-area"></div>
             <div class="sig-line">{{ contract.client.name if contract.client else '' }}</div>
         </div>
     </div>
