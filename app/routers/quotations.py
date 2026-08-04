@@ -103,6 +103,39 @@ async def view_quotation(request: Request, qid: int, db: Session = Depends(get_d
     })
 
 
+@router.get("/{qid}/print", response_class=HTMLResponse)
+async def print_quotation(request: Request, qid: int, db: Session = Depends(get_db)):
+    """صفحة طباعة عرض السعر"""
+    if not request.session.get("user_id"):
+        return RedirectResponse(url="/auth/login", status_code=302)
+    q = db.query(Quotation).filter(Quotation.id == qid).first()
+    if not q:
+        raise HTTPException(status_code=404)
+    company_settings = SettingsService(db).get_all()
+    return templates.TemplateResponse("quotations/print.html", {
+        "request": request, "quotation": q, "settings": company_settings
+    })
+
+
+@router.get("/{qid}/pdf")
+async def download_quotation_pdf(request: Request, qid: int, db: Session = Depends(get_db)):
+    """تنزيل عرض السعر كملف PDF"""
+    if not request.session.get("user_id"):
+        return RedirectResponse(url="/auth/login", status_code=302)
+    q = db.query(Quotation).filter(Quotation.id == qid).first()
+    if not q:
+        raise HTTPException(status_code=404)
+    company_settings = SettingsService(db).get_all()
+    from app.services.pdf_service import generate_quotation_pdf
+    pdf_bytes = generate_quotation_pdf(q, company_settings)
+    filename = f"quotation-{q.quote_number}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("/{qid}/to-invoice")
 async def quotation_to_invoice(request: Request, qid: int, db: Session = Depends(get_db)):
     """تحويل عرض السعر إلى فاتورة"""

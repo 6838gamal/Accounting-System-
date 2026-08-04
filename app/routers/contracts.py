@@ -3,7 +3,7 @@
 """
 from datetime import datetime
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -12,6 +12,7 @@ from app.dependencies import get_db
 from app.models.contract import Contract, ContractStatus
 from app.models.client import Client
 from app.services.activity_service import ActivityService
+from app.services.settings_service import SettingsService
 from app.config import settings
 
 router = APIRouter(prefix="/contracts", tags=["contracts"])
@@ -125,6 +126,39 @@ async def update_contract(
     db.commit()
     ActivityService(db).log(request.session["user_id"], "update", "contracts", contract_id, f"تعديل عقد: {title}")
     return RedirectResponse(url=f"/contracts/{contract_id}", status_code=302)
+
+
+@router.get("/{contract_id}/print", response_class=HTMLResponse)
+async def print_contract(request: Request, contract_id: int, db: Session = Depends(get_db)):
+    """صفحة طباعة العقد"""
+    if not request.session.get("user_id"):
+        return RedirectResponse(url="/auth/login", status_code=302)
+    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="العقد غير موجود")
+    company_settings = SettingsService(db).get_all()
+    return templates.TemplateResponse("contracts/print.html", {
+        "request": request, "contract": contract, "settings": company_settings
+    })
+
+
+@router.get("/{contract_id}/pdf")
+async def download_contract_pdf(request: Request, contract_id: int, db: Session = Depends(get_db)):
+    """تنزيل العقد كملف PDF"""
+    if not request.session.get("user_id"):
+        return RedirectResponse(url="/auth/login", status_code=302)
+    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="العقد غير موجود")
+    company_settings = SettingsService(db).get_all()
+    from app.services.pdf_service import generate_contract_pdf
+    pdf_bytes = generate_contract_pdf(contract, company_settings)
+    filename = f"contract-{contract.contract_number}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("/{contract_id}/to-invoice")

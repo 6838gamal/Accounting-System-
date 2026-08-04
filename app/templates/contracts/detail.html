@@ -10,14 +10,14 @@
             {{ {'draft':'مسودة','active':'نشط','expired':'منتهي','cancelled':'ملغي'}[contract.status.value] }}
         </span>
     </div>
-    <div class="d-flex gap-2">
-        <form method="post" action="/contracts/{{ contract.id }}/to-invoice" class="d-inline">
-            <button type="button" class="btn btn-success"
-                onclick="if(confirm('تحويل العقد إلى فاتورة؟')) this.form.submit()">
-                <i class="bi bi-receipt me-1"></i>تحويل إلى فاتورة
-            </button>
-        </form>
-        <a href="/contracts/{{ contract.id }}/edit" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>تعديل</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="/contracts/{{ contract.id }}/print" target="_blank" class="btn btn-primary">
+            <i class="bi bi-printer me-1"></i>طباعة
+        </a>
+        <a href="/contracts/{{ contract.id }}/pdf" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-pdf me-1"></i>تحميل PDF
+        </a>
+        <a href="/contracts/{{ contract.id }}/edit" class="btn btn-outline-secondary"><i class="bi bi-pencil me-1"></i>تعديل</a>
         <a href="/contracts" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
     </div>
 </div>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عرض سعر {{ quotation.quote_number }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            font-size: 13px;
+            color: #1e293b;
+            background: #fff;
+            direction: rtl;
+        }
+        .print-actions {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 999;
+        }
+        .btn-print, .btn-back {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-print { background: #2563eb; color: #fff; }
+        .btn-back  { background: #e2e8f0; color: #1e293b; }
+        @media print {
+            .print-actions { display: none; }
+            body { margin: 0; }
+        }
+
+        .page {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #fff;
+        }
+
+        /* ترويسة */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        .company-info h1 { font-size: 20px; color: #2563eb; margin-bottom: 4px; }
+        .company-info p  { color: #64748b; font-size: 12px; line-height: 1.6; }
+        .doc-info { text-align: left; }
+        .doc-number { font-size: 20px; font-weight: 700; color: #2563eb; }
+        .doc-meta   { font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.6; }
+
+        /* حالة العرض */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .badge-draft    { background: #f1f5f9; color: #475569; }
+        .badge-sent     { background: #dbeafe; color: #1e40af; }
+        .badge-accepted { background: #dcfce7; color: #166534; }
+        .badge-rejected { background: #fee2e2; color: #991b1b; }
+        .badge-expired  { background: #fef9c3; color: #713f12; }
+
+        /* أطراف */
+        .parties {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .party-box {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px 16px;
+        }
+        .party-box .label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+        .party-box .name  { font-size: 15px; font-weight: 700; }
+
+        /* موضوع العرض */
+        .quote-subject {
+            font-size: 15px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-right: 4px solid #2563eb;
+            border-radius: 4px;
+        }
+
+        /* جدول البنود */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+        .items-table th {
+            background: #2563eb;
+            color: #fff;
+            padding: 10px 12px;
+            text-align: right;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .items-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: right;
+        }
+        .items-table tbody tr:nth-child(even) { background: #f8fafc; }
+        .items-table .num { text-align: center; }
+        .items-table .total-col { font-weight: 600; }
+
+        /* ملخص مالي */
+        .summary-wrap {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .summary-table {
+            width: 280px;
+            border-collapse: collapse;
+        }
+        .summary-table td {
+            padding: 7px 12px;
+            font-size: 13px;
+        }
+        .summary-table .label-col { color: #64748b; }
+        .summary-table .value-col { text-align: left; font-weight: 500; }
+        .summary-table .total-row td {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2563eb;
+            border-top: 2px solid #2563eb;
+            background: #eff6ff;
+            padding: 10px 12px;
+        }
+
+        /* الملاحظات */
+        .notes-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            line-height: 1.7;
+            color: #475569;
+        }
+        .notes-label { font-weight: 600; color: #374151; margin-bottom: 4px; }
+
+        /* شروط */
+        .terms {
+            font-size: 11px;
+            color: #94a3b8;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 12px;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        /* التوقيعات */
+        .signatures {
+            display: flex;
+            gap: 40px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed #cbd5e1;
+        }
+        .sig-box { flex: 1; text-align: center; }
+        .sig-box .sig-label { font-weight: 600; color: #374151; margin-bottom: 48px; }
+        .sig-box .sig-line  {
+            border-top: 1px solid #1e293b;
+            padding-top: 6px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* تذييل */
+        .footer {
+            margin-top: 28px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="print-actions">
+    <button class="btn-print" onclick="window.print()">🖨️ طباعة</button>
+    <a class="btn-back" href="/quotations/{{ quotation.id }}">← رجوع</a>
+</div>
+
+<div class="page">
+    <!-- ترويسة -->
+    <div class="header">
+        <div class="company-info">
+            <h1>{{ settings.get('company_name', 'اسم الشركة') }}</h1>
+            {% if settings.get('company_address') %}
+            <p>{{ settings.get('company_address') }}</p>
+            {% endif %}
+            {% if settings.get('company_phone') %}
+            <p>هاتف: {{ settings.get('company_phone') }}</p>
+            {% endif %}
+            {% if settings.get('company_email') %}
+            <p>{{ settings.get('company_email') }}</p>
+            {% endif %}
+            {% if settings.get('company_tax_number') %}
+            <p>الرقم الضريبي: {{ settings.get('company_tax_number') }}</p>
+            {% endif %}
+        </div>
+        <div class="doc-info">
+            <div class="doc-number">عرض سعر: {{ quotation.quote_number }}</div>
+            <div class="doc-meta">
+                تاريخ الإنشاء: {{ quotation.created_at.strftime('%Y-%m-%d') }}<br>
+                صالح حتى: {{ quotation.valid_until or '-' }}
+            </div>
+            <span class="status-badge badge-{{ quotation.status.value }}">
+                {{ {'draft':'مسودة','sent':'مرسل','accepted':'مقبول','rejected':'مرفوض','expired':'منتهي'}[quotation.status.value] }}
+            </span>
+        </div>
+    </div>
+
+    <!-- أطراف العرض -->
+    <div class="parties">
+        <div class="party-box">
+            <div class="label">مقدَّم من</div>
+            <div class="name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+        </div>
+        <div class="party-box">
+            <div class="label">مقدَّم إلى</div>
+            <div class="name">{{ quotation.client.name if quotation.client else '-' }}</div>
+            {% if quotation.client and quotation.client.phone %}
+            <div style="font-size:12px;color:#64748b;margin-top:4px;">{{ quotation.client.phone }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- موضوع العرض -->
+    <div class="quote-subject">الموضوع: {{ quotation.title }}</div>
+
+    <!-- بنود العرض -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>الوصف</th>
+                <th class="num">الكمية</th>
+                <th class="num">سعر الوحدة</th>
+                <th class="num">الإجمالي</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in quotation.items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="num">{{ item.quantity }}</td>
+                <td class="num">{{ "{:,.2f}".format(item.unit_price) }}</td>
+                <td class="num total-col">{{ "{:,.2f}".format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- الملخص المالي -->
+    <div class="summary-wrap">
+        <table class="summary-table">
+            <tr>
+                <td class="label-col">المجموع الفرعي</td>
+                <td class="value-col">{{ "{:,.2f}".format(quotation.subtotal) }} {{ settings.get('currency', 'SAR') }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">الضريبة ({{ quotation.tax_rate }}%)</td>
+                <td class="value-col">{{ "{:,.2f}".format(quotation.tax_amount) }} {{ settings.get('currency', 'SAR') }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">الخصم</td>
+                <td class="value-col">{{ "{:,.2f}".format(quotation.discount) }} {{ settings.get('currency', 'SAR') }}</td>
+            </tr>
+            <tr class="total-row">
+                <td>الإجمالي</td>
+                <td>{{ "{:,.2f}".format(quotation.total) }} {{ settings.get('currency', 'SAR') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- الملاحظات -->
+    {% if quotation.notes %}
+    <div class="notes-box">
+        <div class="notes-label">ملاحظات:</div>
+        {{ quotation.notes }}
+    </div>
+    {% endif %}
+
+    <!-- التوقيعات -->
+    <div class="signatures">
+        <div class="sig-box">
+            <div class="sig-label">توقيع وختم المقدِّم</div>
+            <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+        </div>
+        <div class="sig-box">
+            <div class="sig-label">توقيع العميل (قبول العرض)</div>
+            <div class="sig-line">{{ quotation.client.name if quotation.client else '' }}</div>
+        </div>
+    </div>
+
+    <!-- تذييل -->
+    <div class="footer">
+        {{ settings.get('company_name', '') }}
+        {% if settings.get('company_phone') %} | {{ settings.get('company_phone') }}{% endif %}
+        {% if settings.get('company_email') %} | {{ settings.get('company_email') }}{% endif %}
+    </div>
+</div>
+
+</body>
+</html>
