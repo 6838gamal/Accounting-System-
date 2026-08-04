@@ -1,14 +1,28 @@
 {% extends "base.html" %}
-{% block title %}فاتورة جديدة{% endblock %}
-{% block page_title %}فاتورة جديدة{% endblock %}
+{% block title %}{% if invoice %}تعديل الفاتورة {{ invoice.invoice_number }}{% else %}فاتورة جديدة{% endif %}{% endblock %}
+{% block page_title %}{% if invoice %}تعديل الفاتورة{% else %}فاتورة جديدة{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="bi bi-receipt me-2"></i>فاتورة جديدة</h1>
-    <a href="/invoices" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+    <h1>
+        <i class="bi bi-receipt me-2"></i>
+        {% if invoice %}تعديل الفاتورة {{ invoice.invoice_number }}{% else %}فاتورة جديدة{% endif %}
+    </h1>
+    <a href="{% if invoice %}/invoices/{{ invoice.id }}{% else %}/invoices{% endif %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>رجوع
+    </a>
 </div>
 
-<form method="post" action="/invoices/new" id="invoiceForm">
+{% if error %}
+<div class="alert alert-danger alert-dismissible fade show">
+    <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<form method="post"
+      action="{% if invoice %}/invoices/{{ invoice.id }}/edit{% else %}/invoices/new{% endif %}"
+      id="invoiceForm">
     <div class="row g-3">
         <div class="col-lg-8">
             <div class="card mb-3">
@@ -20,18 +34,22 @@
                             <select name="client_id" class="form-select" required>
                                 <option value="">اختر العميل</option>
                                 {% for c in clients %}
-                                <option value="{{ c.id }}">{{ c.name }}</option>
+                                <option value="{{ c.id }}"
+                                    {% if invoice and invoice.client_id == c.id %}selected{% endif %}>
+                                    {{ c.name }}
+                                </option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">تاريخ الإصدار <span class="text-danger">*</span></label>
                             <input type="date" name="issue_date" class="form-control" required
-                                value="{{ today.strftime('%Y-%m-%d') if today else '' }}">
+                                value="{{ invoice.issue_date.strftime('%Y-%m-%d') if invoice and invoice.issue_date else (today.strftime('%Y-%m-%d') if today else '') }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">تاريخ الاستحقاق</label>
-                            <input type="date" name="due_date" class="form-control">
+                            <input type="date" name="due_date" class="form-control"
+                                value="{{ invoice.due_date.strftime('%Y-%m-%d') if invoice and invoice.due_date else '' }}">
                         </div>
                     </div>
                 </div>
@@ -66,13 +84,15 @@
                     <div class="mb-3">
                         <label class="form-label">نسبة الضريبة (%)</label>
                         <input type="number" name="tax_rate" id="tax_rate" class="form-control"
-                            value="{{ default_tax_rate or 0 }}" min="0" max="100" step="0.01"
+                            value="{{ invoice.tax_rate if invoice else (default_tax_rate or 0) }}"
+                            min="0" max="100" step="0.01"
                             oninput="calculateTotals()">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">الخصم</label>
                         <input type="number" name="discount" id="discount" class="form-control"
-                            value="0" min="0" step="0.01" oninput="calculateTotals()">
+                            value="{{ invoice.discount if invoice else 0 }}"
+                            min="0" step="0.01" oninput="calculateTotals()">
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between mb-2">
@@ -92,9 +112,10 @@
             <div class="card">
                 <div class="card-body">
                     <label class="form-label">ملاحظات</label>
-                    <textarea name="notes" class="form-control" rows="3" placeholder="ملاحظات اختيارية..."></textarea>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="ملاحظات اختيارية...">{{ invoice.notes if invoice and invoice.notes else '' }}</textarea>
                     <button type="submit" class="btn btn-primary w-100 mt-3">
-                        <i class="bi bi-check-lg me-1"></i>إنشاء الفاتورة
+                        <i class="bi bi-check-lg me-1"></i>
+                        {% if invoice %}حفظ التعديلات{% else %}إنشاء الفاتورة{% endif %}
                     </button>
                 </div>
             </div>
@@ -106,10 +127,25 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // تعيين تاريخ اليوم
+    {% if invoice %}
+    // تحميل بنود الفاتورة الموجودة
+    const existingItems = [
+        {% for item in invoice.items %}
+        {
+            description: {{ item.description | tojson }},
+            quantity: {{ item.quantity | float }},
+            unit_price: {{ item.unit_price | float }},
+            total: {{ item.total | float }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    initItems(existingItems.length ? existingItems : []);
+    {% else %}
+    // تعيين تاريخ اليوم للفاتورة الجديدة
     const today = new Date().toISOString().split('T')[0];
     document.querySelector('input[name="issue_date"]').value = today;
     initItems([]);
+    {% endif %}
 });
 </script>
 {% endblock %}

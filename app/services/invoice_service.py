@@ -82,6 +82,50 @@ class InvoiceService:
         self.db.refresh(invoice)
         return invoice
 
+    def update(self, invoice_id: int, data: dict, items_data: list) -> Invoice:
+        """تعديل فاتورة موجودة"""
+        invoice = self.get_by_id(invoice_id)
+        if not invoice:
+            raise ValueError("الفاتورة غير موجودة")
+        if invoice.status.value in ("paid", "cancelled"):
+            raise ValueError("لا يمكن تعديل فاتورة مدفوعة أو ملغاة")
+
+        tax_rate = Decimal(str(data.get("tax_rate", 0)))
+        discount = Decimal(str(data.get("discount", 0)))
+        totals = self.calculate_totals(items_data, tax_rate, discount)
+
+        invoice.client_id = data["client_id"]
+        invoice.issue_date = data["issue_date"]
+        invoice.due_date = data.get("due_date")
+        invoice.tax_rate = tax_rate
+        invoice.discount = discount
+        invoice.notes = data.get("notes") or None
+        invoice.subtotal = totals["subtotal"]
+        invoice.tax_amount = totals["tax_amount"]
+        invoice.total = totals["total"]
+
+        # حذف البنود القديمة وإعادة إضافتها
+        for item in list(invoice.items):
+            self.db.delete(item)
+        self.db.flush()
+
+        for i, item_data in enumerate(items_data):
+            qty = Decimal(str(item_data.get("quantity", 1)))
+            price = Decimal(str(item_data.get("unit_price", 0)))
+            item = InvoiceItem(
+                invoice_id=invoice.id,
+                description=item_data.get("description", ""),
+                quantity=qty,
+                unit_price=price,
+                total=qty * price,
+                sort_order=i,
+            )
+            self.db.add(item)
+
+        self.db.commit()
+        self.db.refresh(invoice)
+        return invoice
+
     def record_payment(self, invoice_id: int, amount: Decimal, payment_data: dict, created_by: int) -> Payment:
         """تسجيل دفعة على فاتورة"""
         invoice = self.get_by_id(invoice_id)

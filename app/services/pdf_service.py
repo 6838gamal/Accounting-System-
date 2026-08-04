@@ -469,14 +469,15 @@ def generate_invoice_pdf(invoice, company_settings: dict) -> bytes:
         elements.append(_bold_para("ملاحظات:", size=9.5, color=s["text"]))
         elements.append(_para(invoice.notes, size=9))
 
-    # التوقيعات
-    _build_signatures(
-        elements,
-        company_settings.get("company_name", ""),
-        company_settings.get("pdf_signatory_title", "المدير العام"),
-        client.name if client else "",
-        s, page_width,
-    )
+    # التوقيعات (يمكن التحكم بها من الإعدادات)
+    if company_settings.get("pdf_show_signatures", "1") == "1":
+        _build_signatures(
+            elements,
+            company_settings.get("company_name", ""),
+            company_settings.get("pdf_signatory_title", "المدير العام"),
+            client.name if client else "",
+            s, page_width,
+        )
 
     _build_footer(elements, company_settings, s)
 

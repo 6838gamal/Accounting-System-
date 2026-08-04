@@ -14,6 +14,11 @@
         <a href="/invoices/{{ invoice.id }}/pdf" target="_blank" class="btn btn-outline-danger">
             <i class="bi bi-file-pdf me-1"></i>PDF
         </a>
+        {% if invoice.status.value not in ['paid', 'cancelled'] %}
+        <a href="/invoices/{{ invoice.id }}/edit" class="btn btn-outline-primary">
+            <i class="bi bi-pencil me-1"></i>تعديل
+        </a>
+        {% endif %}
         <a href="/invoices" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
     </div>
 </div>

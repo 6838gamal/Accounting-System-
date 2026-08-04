@@ -188,6 +188,24 @@
                                           placeholder="مثال: شكراً لتعاملكم معنا | هاتف: 05xxxxxxxx">{{ settings.get('pdf_footer_text', '') }}</textarea>
                                 <div class="form-text">يظهر في أسفل كل PDF (اتركه فارغاً للاسم والهاتف والبريد تلقائياً)</div>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">علامة مائية (اختياري)</label>
+                                <input type="text" name="pdf_watermark" class="form-control"
+                                       value="{{ settings.get('pdf_watermark', '') }}"
+                                       placeholder="مثال: نسخة أولية">
+                                <div class="form-text">تظهر بشكل خفيف في وسط الوثيقة</div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="pdf_show_signatures" value="1" id="showSignatures"
+                                           {% if settings.get('pdf_show_signatures', '1') == '1' %}checked{% endif %}>
+                                    <label class="form-check-label fw-semibold" for="showSignatures">
+                                        إظهار خانات التوقيع
+                                    </label>
+                                </div>
+                                <div class="form-text">إظهار أو إخفاء قسم التوقيعات في أسفل الوثائق</div>
+                            </div>
                         </div>
 
                     </div>

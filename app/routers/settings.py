@@ -45,6 +45,9 @@ async def save_settings(
     # حفظ الحقول النصية العادية
     text_keys = {k for k in DEFAULT_SETTINGS if k != "company_logo"}
     data = {k: str(v) for k, v in form_data.items() if k in text_keys}
+    # معالجة الـ checkbox — إذا لم يُرسَل يعني غير محدد
+    if "pdf_show_signatures" in text_keys:
+        data["pdf_show_signatures"] = "1" if "pdf_show_signatures" in form_data else "0"
     service.save_all(data)
 
     # معالجة الشعار

@@ -4,7 +4,7 @@
 كيفية العمل:
   1. يُقرأ قالب HTML من app/templates/pdf/<name>.html
   2. يُعرض بـ Jinja2 مع بيانات الوثيقة وإعدادات الشركة
-  3. يُحوَّل الناتج إلى PDF بـ xhtml2pdf
+  3. يُحوَّل الناتج إلى PDF بـ WeasyPrint (يدعم العربية واتجاه RTL)
 
 لتغيير تخطيط أي وثيقة: عدِّل الملف المقابل في app/templates/pdf/
 لتغيير الأنماط المشتركة: عدِّل app/templates/pdf/_styles.html
@@ -13,7 +13,6 @@
 from __future__ import annotations
 from io import BytesIO
 from pathlib import Path
-from xhtml2pdf import pisa
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 # مسار مجلد قوالب PDF
@@ -49,11 +48,10 @@ def _render_html(template_name: str, context: dict) -> str:
 
 
 def _html_to_pdf(html: str) -> bytes:
-    """تحويل HTML إلى PDF باستخدام xhtml2pdf"""
+    """تحويل HTML إلى PDF باستخدام WeasyPrint (دعم كامل للعربية وRTL)"""
+    from weasyprint import HTML, CSS
     buf = BytesIO()
-    result = pisa.CreatePDF(html, dest=buf, encoding="utf-8")
-    if result.err:
-        raise RuntimeError(f"خطأ في توليد PDF: {result.err}")
+    HTML(string=html, base_url=str(_TEMPLATES_DIR)).write_pdf(buf)
     buf.seek(0)
     return buf.read()
 

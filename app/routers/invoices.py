@@ -80,6 +80,59 @@ async def create_invoice(
     return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
 
 
+@router.get("/{invoice_id}/edit", response_class=HTMLResponse)
+async def edit_invoice_form(request: Request, invoice_id: int, db: Session = Depends(get_db)):
+    if not request.session.get("user_id"):
+        return RedirectResponse(url="/auth/login", status_code=302)
+    invoice = InvoiceService(db).get_by_id(invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="الفاتورة غير موجودة")
+    if invoice.status.value in ("paid", "cancelled"):
+        return RedirectResponse(url=f"/invoices/{invoice_id}", status_code=302)
+    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    settings_svc = SettingsService(db)
+    tax_rate = settings_svc.get("default_tax_rate", "15")
+    return templates.TemplateResponse("invoices/form.html", {
+        "request": request, "invoice": invoice, "clients": clients,
+        "default_tax_rate": tax_rate, "error": None,
+        "today": invoice.issue_date,
+    })
+
+
+@router.post("/{invoice_id}/edit")
+async def update_invoice(
+    request: Request, invoice_id: int, db: Session = Depends(get_db),
+    client_id: int = Form(...), issue_date: str = Form(...),
+    due_date: Optional[str] = Form(None), tax_rate: float = Form(0),
+    discount: float = Form(0), notes: Optional[str] = Form(None),
+    items_json: str = Form("[]"),
+):
+    if not request.session.get("user_id"):
+        return RedirectResponse(url="/auth/login", status_code=302)
+    # التحقق من إمكانية التعديل قبل المعالجة
+    existing = InvoiceService(db).get_by_id(invoice_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="الفاتورة غير موجودة")
+    if existing.status.value in ("paid", "cancelled"):
+        raise HTTPException(status_code=403, detail="لا يمكن تعديل فاتورة مدفوعة أو ملغاة")
+    items = json.loads(items_json)
+    service = InvoiceService(db)
+    invoice = service.update(
+        invoice_id,
+        {
+            "client_id": client_id,
+            "issue_date": date.fromisoformat(issue_date),
+            "due_date": date.fromisoformat(due_date) if due_date else None,
+            "tax_rate": Decimal(str(tax_rate)),
+            "discount": Decimal(str(discount)),
+            "notes": notes or None,
+        },
+        items_data=items,
+    )
+    ActivityService(db).log(request.session["user_id"], "update", "invoices", invoice.id, f"تعديل فاتورة: {invoice.invoice_number}")
+    return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
+
+
 @router.get("/{invoice_id}", response_class=HTMLResponse)
 async def view_invoice(request: Request, invoice_id: int, db: Session = Depends(get_db)):
     if not request.session.get("user_id"):
@@ -101,7 +154,7 @@ async def invoice_pdf(request: Request, invoice_id: int, db: Session = Depends(g
     if not invoice:
         raise HTTPException(status_code=404)
     company_settings = SettingsService(db).get_all()
-    from app.services.html_pdf_service import generate_invoice_pdf
+    from app.services.pdf_service import generate_invoice_pdf
     pdf_bytes = generate_invoice_pdf(invoice, company_settings)
     return Response(
         content=pdf_bytes,

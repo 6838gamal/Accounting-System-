@@ -151,7 +151,7 @@ async def download_contract_pdf(request: Request, contract_id: int, db: Session 
     if not contract:
         raise HTTPException(status_code=404, detail="العقد غير موجود")
     company_settings = SettingsService(db).get_all()
-    from app.services.html_pdf_service import generate_contract_pdf
+    from app.services.pdf_service import generate_contract_pdf
     pdf_bytes = generate_contract_pdf(contract, company_settings)
     filename = f"contract-{contract.contract_number}.pdf"
     return Response(
