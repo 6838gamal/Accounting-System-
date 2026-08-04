@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}فاتورة {{ invoice.invoice_number }}{% endblock %}
+{% block page_title %}تفاصيل الفاتورة{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-receipt me-2"></i>{{ invoice.invoice_number }}</h1>
+        <span class="badge-status badge-{{ invoice.status.value }}">
+            {{ {'draft':'مسودة','sent':'مرسلة','partial':'جزئي','paid':'مدفوعة','overdue':'متأخرة','cancelled':'ملغاة'}[invoice.status.value] }}
+        </span>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/invoices/{{ invoice.id }}/pdf" target="_blank" class="btn btn-outline-danger">
+            <i class="bi bi-file-pdf me-1"></i>PDF
+        </a>
+        <a href="/invoices" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <!-- معلومات الفاتورة والبنود -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background:#f8fafc">
+                            <div class="small text-muted mb-1">من</div>
+                            <strong>{{ settings.get('company_name', 'اسم الشركة') }}</strong>
+                            {% if settings.get('company_address') %}<div class="small">{{ settings.get('company_address') }}</div>{% endif %}
+                            {% if settings.get('company_phone') %}<div class="small">{{ settings.get('company_phone') }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background:#f8fafc">
+                            <div class="small text-muted mb-1">إلى</div>
+                            <strong>{{ invoice.client.name if invoice.client else '-' }}</strong>
+                            {% if invoice.client and invoice.client.email %}<div class="small">{{ invoice.client.email }}</div>{% endif %}
+                            {% if invoice.client and invoice.client.phone %}<div class="small">{{ invoice.client.phone }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="small text-muted d-block">تاريخ الإصدار</span>
+                        <strong>{{ invoice.issue_date }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="small text-muted d-block">تاريخ الاستحقاق</span>
+                        <strong>{{ invoice.due_date or '-' }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="small text-muted d-block">رقم الفاتورة</span>
+                        <strong>{{ invoice.invoice_number }}</strong>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead class="table-light"><tr>
+                        <th>الوصف</th><th class="text-center">الكمية</th>
+                        <th class="text-end">سعر الوحدة</th><th class="text-end">الإجمالي</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for item in invoice.items %}
+                    <tr>
+                        <td>{{ item.description }}</td>
+                        <td class="text-center">{{ item.quantity }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(item.unit_price) }}</td>
+                        <td class="text-end fw-semibold">{{ "{:,.2f}".format(item.total) }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="row justify-content-end">
+                    <div class="col-md-5">
+                        <table class="table table-sm">
+                            <tr><td class="text-muted">المجموع الفرعي</td><td class="text-end">{{ "{:,.2f}".format(invoice.subtotal) }}</td></tr>
+                            <tr><td class="text-muted">الضريبة ({{ invoice.tax_rate }}%)</td><td class="text-end">{{ "{:,.2f}".format(invoice.tax_amount) }}</td></tr>
+                            <tr><td class="text-muted">الخصم</td><td class="text-end">{{ "{:,.2f}".format(invoice.discount) }}</td></tr>
+                            <tr class="fw-bold fs-5"><td>الإجمالي</td><td class="text-end text-primary">{{ "{:,.2f}".format(invoice.total) }}</td></tr>
+                            <tr class="text-success"><td>تم دفعه</td><td class="text-end">{{ "{:,.2f}".format(invoice.paid_amount) }}</td></tr>
+                            <tr class="fw-bold"><td>المتبقي</td><td class="text-end text-danger">{{ "{:,.2f}".format(invoice.total - invoice.paid_amount) }}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                {% if invoice.notes %}<div class="alert alert-light"><strong>ملاحظات:</strong> {{ invoice.notes }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- تسجيل دفعة -->
+        {% if invoice.status.value not in ['paid', 'cancelled'] %}
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-credit-card me-2"></i>تسجيل دفعة</div>
+            <div class="card-body">
+                <form method="post" action="/invoices/{{ invoice.id }}/payment">
+                    <div class="mb-2">
+                        <label class="form-label">المبلغ</label>
+                        <input type="number" name="amount" class="form-control" step="0.01"
+                            max="{{ (invoice.total - invoice.paid_amount)|float }}"
+                            value="{{ (invoice.total - invoice.paid_amount)|float }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">التاريخ</label>
+                        <input type="date" name="payment_date" class="form-control" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">طريقة الدفع</label>
+                        <select name="method" class="form-select">
+                            <option value="cash">نقدي</option>
+                            <option value="bank_transfer">تحويل بنكي</option>
+                            <option value="check">شيك</option>
+                            <option value="card">بطاقة</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">رقم مرجعي</label>
+                        <input type="text" name="reference" class="form-control" placeholder="اختياري">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-lg me-1"></i>تسجيل الدفعة
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- سجل المدفوعات -->
+        <div class="card">
+            <div class="card-header">سجل المدفوعات</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>التاريخ</th><th>المبلغ</th><th>الطريقة</th></tr></thead>
+                    <tbody>
+                    {% for pay in invoice.payments %}
+                    <tr>
+                        <td>{{ pay.payment_date }}</td>
+                        <td class="text-success fw-semibold">{{ "{:,.2f}".format(pay.amount) }}</td>
+                        <td>{{ {'cash':'نقدي','bank_transfer':'تحويل','check':'شيك','card':'بطاقة'}[pay.method.value] }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-center text-muted py-2">لا توجد مدفوعات</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelector('input[name="payment_date"]').value = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

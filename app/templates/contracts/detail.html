@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ contract.contract_number }}{% endblock %}
+{% block page_title %}تفاصيل العقد{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-file-earmark-check me-2"></i>{{ contract.contract_number }}</h1>
+        <span class="badge-status badge-{{ contract.status.value }}">
+            {{ {'draft':'مسودة','active':'نشط','expired':'منتهي','cancelled':'ملغي'}[contract.status.value] }}
+        </span>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="post" action="/contracts/{{ contract.id }}/to-invoice" class="d-inline">
+            <button type="button" class="btn btn-success"
+                onclick="if(confirm('تحويل العقد إلى فاتورة؟')) this.form.submit()">
+                <i class="bi bi-receipt me-1"></i>تحويل إلى فاتورة
+            </button>
+        </form>
+        <a href="/contracts/{{ contract.id }}/edit" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>تعديل</a>
+        <a href="/contracts" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">تفاصيل العقد</div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr><th style="width:160px">رقم العقد</th><td><strong>{{ contract.contract_number }}</strong></td></tr>
+                    <tr><th>العنوان</th><td>{{ contract.title }}</td></tr>
+                    <tr><th>العميل</th><td><a href="/clients/{{ contract.client_id }}">{{ contract.client.name if contract.client else '-' }}</a></td></tr>
+                    <tr><th>القيمة</th><td class="fw-bold fs-5 text-primary">{{ "{:,.2f}".format(contract.amount) }}</td></tr>
+                    <tr><th>تاريخ البداية</th><td>{{ contract.start_date or '-' }}</td></tr>
+                    <tr><th>تاريخ النهاية</th><td>{{ contract.end_date or '-' }}</td></tr>
+                    <tr><th>الوصف</th><td>{{ contract.description or '-' }}</td></tr>
+                    <tr><th>ملاحظات</th><td>{{ contract.notes or '-' }}</td></tr>
+                    <tr><th>تاريخ الإنشاء</th><td>{{ contract.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">الفواتير المرتبطة</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>الرقم</th><th>الإجمالي</th><th>الحالة</th></tr></thead>
+                    <tbody>
+                    {% for inv in contract.invoices.limit(10) %}
+                    <tr>
+                        <td><a href="/invoices/{{ inv.id }}">{{ inv.invoice_number }}</a></td>
+                        <td>{{ "{:,.0f}".format(inv.total) }}</td>
+                        <td><span class="badge-status badge-{{ inv.status.value }}">{{ inv.status.value }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-center text-muted py-2">لا توجد فواتير</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

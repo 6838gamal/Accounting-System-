@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}تقرير الأرباح والخسائر{% endblock %}
+{% block page_title %}الأرباح والخسائر{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-trending-up me-2"></i>تقرير الأرباح والخسائر</h1>
+    <a href="/reports" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">من تاريخ</label>
+                <input type="date" name="start_date" class="form-control" value="{{ report.start_date }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">إلى تاريخ</label>
+                <input type="date" name="end_date" class="form-control" value="{{ report.end_date }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">عرض</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 justify-content-center mb-4">
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon green"><i class="bi bi-cash-stack"></i></div>
+            <div><div class="stat-value text-success">{{ "{:,.0f}".format(report.revenue) }}</div><div class="stat-label">إجمالي الإيرادات</div></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon red"><i class="bi bi-wallet2"></i></div>
+            <div><div class="stat-value text-danger">{{ "{:,.0f}".format(report.expenses) }}</div><div class="stat-label">إجمالي المصروفات</div></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon {{ 'green' if report.profit >= 0 else 'red' }}"><i class="bi bi-trending-{{ 'up' if report.profit >= 0 else 'down' }}"></i></div>
+            <div>
+                <div class="stat-value {{ 'text-success' if report.profit >= 0 else 'text-danger' }}">{{ "{:,.0f}".format(report.profit) }}</div>
+                <div class="stat-label">صافي {{ 'الربح' if report.profit >= 0 else 'الخسارة' }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <canvas id="plChart" height="80"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+new Chart(document.getElementById('plChart'), {
+    type: 'bar',
+    data: {
+        labels: ['الإيرادات', 'المصروفات', 'صافي الربح'],
+        datasets: [{
+            label: 'المبلغ',
+            data: [{{ report.revenue }}, {{ report.expenses }}, {{ report.profit }}],
+            backgroundColor: ['rgba(22,163,74,0.8)', 'rgba(220,38,38,0.8)', '{{ "rgba(37,99,235,0.8)" if report.profit >= 0 else "rgba(220,38,38,0.8)" }}'],
+            borderRadius: 8,
+        }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ 'تعديل عميل' if client else 'عميل جديد' }}{% endblock %}
+{% block page_title %}{{ 'تعديل عميل' if client else 'عميل جديد' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-person-plus me-2"></i>{{ 'تعديل عميل' if client else 'عميل جديد' }}</h1>
+    <a href="/clients" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+</div>
+
+{% if error %}
+<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" action="{{ '/clients/' + client.id|string + '/edit' if client else '/clients/new' }}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">الاسم <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" value="{{ client.name if client else '' }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">النوع</label>
+                    <select name="type" class="form-select">
+                        <option value="company" {{ 'selected' if client and client.type.value == 'company' }}>شركة</option>
+                        <option value="individual" {{ 'selected' if client and client.type.value == 'individual' }}>فرد</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input type="email" name="email" class="form-control" value="{{ client.email or '' if client else '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="text" name="phone" class="form-control" value="{{ client.phone or '' if client else '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">الرقم الضريبي</label>
+                    <input type="text" name="tax_number" class="form-control" value="{{ client.tax_number or '' if client else '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">العنوان</label>
+                    <textarea name="address" class="form-control" rows="2">{{ client.address or '' if client else '' }}</textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">ملاحظات</label>
+                    <textarea name="notes" class="form-control" rows="3">{{ client.notes or '' if client else '' }}</textarea>
+                </div>
+            </div>
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check-lg me-1"></i>حفظ
+                </button>
+                <a href="/clients" class="btn btn-outline-secondary">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}تقرير المبيعات{% endblock %}
+{% block page_title %}تقرير المبيعات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-graph-up me-2"></i>تقرير المبيعات</h1>
+    <div class="d-flex gap-2">
+        <a href="/reports/sales/excel?start_date={{ report.start_date }}&end_date={{ report.end_date }}" class="btn btn-success">
+            <i class="bi bi-file-excel me-1"></i>Excel
+        </a>
+        <a href="/reports" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">من تاريخ</label>
+                <input type="date" name="start_date" class="form-control" value="{{ report.start_date }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">إلى تاريخ</label>
+                <input type="date" name="end_date" class="form-control" value="{{ report.end_date }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">عرض</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-receipt"></i></div>
+            <div><div class="stat-value">{{ report.total_invoices }}</div><div class="stat-label">عدد الفواتير</div></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon orange"><i class="bi bi-currency-dollar"></i></div>
+            <div><div class="stat-value">{{ "{:,.0f}".format(report.total_invoiced) }}</div><div class="stat-label">إجمالي الفواتير</div></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon green"><i class="bi bi-cash-stack"></i></div>
+            <div><div class="stat-value">{{ "{:,.0f}".format(report.total_paid) }}</div><div class="stat-label">تم تحصيله</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>رقم الفاتورة</th><th>العميل</th><th>التاريخ</th>
+                <th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>الحالة</th>
+            </tr></thead>
+            <tbody>
+            {% for inv in report.invoices %}
+            <tr>
+                <td><a href="/invoices/{{ inv.id }}">{{ inv.invoice_number }}</a></td>
+                <td>{{ inv.client.name if inv.client else '-' }}</td>
+                <td>{{ inv.issue_date }}</td>
+                <td>{{ "{:,.2f}".format(inv.total) }}</td>
+                <td class="text-success">{{ "{:,.2f}".format(inv.paid_amount) }}</td>
+                <td class="text-danger">{{ "{:,.2f}".format(inv.total - inv.paid_amount) }}</td>
+                <td><span class="badge-status badge-{{ inv.status.value }}">{{ inv.status.value }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted py-4">لا توجد فواتير في هذه الفترة</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

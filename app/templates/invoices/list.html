@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}الفواتير{% endblock %}
+{% block page_title %}الفواتير{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-receipt me-2"></i>الفواتير ({{ total }})</h1>
+    <a href="/invoices/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>فاتورة جديدة</a>
+</div>
+
+<!-- ملخص -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-currency-dollar"></i></div>
+            <div><div class="stat-value">{{ "{:,.0f}".format(summary.total_invoiced) }}</div><div class="stat-label">إجمالي الفواتير</div></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+            <div><div class="stat-value">{{ "{:,.0f}".format(summary.total_paid) }}</div><div class="stat-label">تم تحصيله</div></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="bi bi-hourglass-split"></i></div>
+            <div><div class="stat-value">{{ summary.pending_count }}</div><div class="stat-label">فواتير معلقة</div></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="bi bi-exclamation-triangle"></i></div>
+            <div><div class="stat-value">{{ summary.overdue_count }}</div><div class="stat-label">متأخرة</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- تصفية الحالة -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/invoices" class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-secondary' }}">الكل</a>
+            {% for s, label in [('draft','مسودة'),('sent','مرسلة'),('partial','جزئي'),('paid','مدفوعة'),('overdue','متأخرة')] %}
+            <a href="/invoices?status={{ s }}" class="btn btn-sm {{ 'btn-primary' if status_filter == s else 'btn-outline-secondary' }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>رقم الفاتورة</th><th>العميل</th><th>تاريخ الإصدار</th>
+                <th>تاريخ الاستحقاق</th><th>الإجمالي</th><th>المدفوع</th><th>الحالة</th><th>إجراءات</th>
+            </tr></thead>
+            <tbody>
+            {% for inv in invoices %}
+            <tr>
+                <td><a href="/invoices/{{ inv.id }}" class="fw-semibold text-decoration-none">{{ inv.invoice_number }}</a></td>
+                <td>{{ inv.client.name if inv.client else '-' }}</td>
+                <td>{{ inv.issue_date }}</td>
+                <td class="{{ 'text-danger fw-bold' if inv.status.value == 'overdue' else '' }}">{{ inv.due_date or '-' }}</td>
+                <td class="fw-semibold">{{ "{:,.2f}".format(inv.total) }}</td>
+                <td class="text-success">{{ "{:,.2f}".format(inv.paid_amount) }}</td>
+                <td>
+                    <span class="badge-status badge-{{ inv.status.value }}">
+                        {{ {'draft':'مسودة','sent':'مرسلة','partial':'جزئي','paid':'مدفوعة','overdue':'متأخرة','cancelled':'ملغاة'}[inv.status.value] }}
+                    </span>
+                </td>
+                <td>
+                    <a href="/invoices/{{ inv.id }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                    <a href="/invoices/{{ inv.id }}/pdf" class="btn btn-sm btn-outline-danger" target="_blank"><i class="bi bi-file-pdf"></i></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center text-muted py-4">لا توجد فواتير</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer">
+        <nav><ul class="pagination mb-0 justify-content-center">
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {{ 'active' if p == page }}">
+                <a class="page-link" href="?page={{ p }}{{ '&status=' + status_filter if status_filter else '' }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

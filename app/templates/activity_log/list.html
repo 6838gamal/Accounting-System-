@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}سجل العمليات{% endblock %}
+{% block page_title %}سجل العمليات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-clock-history me-2"></i>سجل العمليات ({{ total }})</h1>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/activity-log" class="btn btn-sm {{ 'btn-primary' if not module_filter else 'btn-outline-secondary' }}">الكل</a>
+            {% for m in ['clients','contracts','quotations','invoices','payments','expenses','users'] %}
+            <a href="/activity-log?module={{ m }}" class="btn btn-sm {{ 'btn-primary' if module_filter == m else 'btn-outline-secondary' }}">{{ m }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>الوقت</th><th>المستخدم</th><th>الإجراء</th>
+                <th>الوحدة</th><th>معرف السجل</th><th>التفاصيل</th>
+            </tr></thead>
+            <tbody>
+            {% for log in logs %}
+            <tr>
+                <td class="text-muted small">{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ log.user.full_name if log.user else 'نظام' }}</td>
+                <td>
+                    <span class="badge {{ 'bg-success' if log.action == 'create' else 'bg-warning text-dark' if log.action == 'update' else 'bg-danger' if log.action == 'delete' else 'bg-info' }}">
+                        {{ {'create':'إنشاء','update':'تعديل','delete':'حذف','payment':'دفعة','login':'دخول'}.get(log.action, log.action) }}
+                    </span>
+                </td>
+                <td><span class="badge bg-secondary">{{ log.module }}</span></td>
+                <td class="text-muted">{{ log.record_id or '-' }}</td>
+                <td class="small text-muted">{{ log.details or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">لا توجد عمليات</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer">
+        <nav><ul class="pagination mb-0 justify-content-center">
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {{ 'active' if p == page }}">
+                <a class="page-link" href="?page={{ p }}{{ '&module=' + module_filter if module_filter else '' }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}العملاء{% endblock %}
+{% block page_title %}العملاء{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-people me-2"></i>العملاء ({{ total }})</h1>
+    <a href="/clients/new" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>عميل جديد
+    </a>
+</div>
+
+<!-- البحث -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="search" class="form-control" placeholder="بحث بالاسم أو البريد أو الهاتف..." value="{{ search }}">
+            <button type="submit" class="btn btn-primary px-4">بحث</button>
+            {% if search %}<a href="/clients" class="btn btn-outline-secondary">مسح</a>{% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>#</th>
+                <th>الاسم</th>
+                <th>النوع</th>
+                <th>الهاتف</th>
+                <th>البريد الإلكتروني</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+            </tr></thead>
+            <tbody>
+            {% for client in clients %}
+            <tr>
+                <td class="text-muted">{{ client.id }}</td>
+                <td><a href="/clients/{{ client.id }}" class="fw-semibold text-decoration-none">{{ client.name }}</a></td>
+                <td>{{ 'شركة' if client.type.value == 'company' else 'فرد' }}</td>
+                <td>{{ client.phone or '-' }}</td>
+                <td>{{ client.email or '-' }}</td>
+                <td>
+                    <span class="badge-status {{ 'badge-active' if client.is_active else 'badge-cancelled' }}">
+                        {{ 'نشط' if client.is_active else 'معطل' }}
+                    </span>
+                </td>
+                <td>
+                    <a href="/clients/{{ client.id }}" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-eye"></i></a>
+                    <a href="/clients/{{ client.id }}/edit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted py-4">لا يوجد عملاء</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer">
+        <nav><ul class="pagination mb-0 justify-content-center">
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {{ 'active' if p == page }}">
+                <a class="page-link" href="?page={{ p }}&search={{ search }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

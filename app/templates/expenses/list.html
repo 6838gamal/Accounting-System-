@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}المصروفات{% endblock %}
+{% block page_title %}المصروفات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-wallet2 me-2"></i>المصروفات ({{ total }})</h1>
+    <a href="/expenses/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>مصروف جديد</a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <a href="/expenses" class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-secondary' }}">الكل</a>
+            <a href="/expenses?status=pending" class="btn btn-sm {{ 'btn-primary' if status_filter == 'pending' else 'btn-outline-secondary' }}">معلق</a>
+            <a href="/expenses?status=approved" class="btn btn-sm {{ 'btn-primary' if status_filter == 'approved' else 'btn-outline-secondary' }}">معتمد</a>
+            <a href="/expenses?status=rejected" class="btn btn-sm {{ 'btn-primary' if status_filter == 'rejected' else 'btn-outline-secondary' }}">مرفوض</a>
+            <span class="ms-auto text-muted small">إجمالي المعتمد: <strong class="text-success">{{ "{:,.2f}".format(total_amount) }}</strong></span>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>العنوان</th><th>الفئة</th><th>المبلغ</th>
+                <th>التاريخ</th><th>الحالة</th><th>إجراءات</th>
+            </tr></thead>
+            <tbody>
+            {% for e in expenses %}
+            <tr>
+                <td class="fw-semibold">{{ e.title }}</td>
+                <td><span class="badge bg-secondary">{{ e.category }}</span></td>
+                <td class="fw-semibold">{{ "{:,.2f}".format(e.amount) }}</td>
+                <td>{{ e.expense_date }}</td>
+                <td>
+                    <span class="badge-status badge-{{ e.status.value }}">
+                        {{ {'pending':'معلق','approved':'معتمد','rejected':'مرفوض'}[e.status.value] }}
+                    </span>
+                </td>
+                <td>
+                    {% if e.status.value == 'pending' %}
+                    <form method="post" action="/expenses/{{ e.id }}/approve" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-success" title="اعتماد"><i class="bi bi-check-lg"></i></button>
+                    </form>
+                    <form method="post" action="/expenses/{{ e.id }}/reject" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-danger" title="رفض"><i class="bi bi-x-lg"></i></button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">لا توجد مصروفات</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer">
+        <nav><ul class="pagination mb-0 justify-content-center">
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {{ 'active' if p == page }}">
+                <a class="page-link" href="?page={{ p }}{{ '&status=' + status_filter if status_filter else '' }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

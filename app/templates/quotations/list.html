@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}عروض الأسعار{% endblock %}
+{% block page_title %}عروض الأسعار{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-file-earmark-text me-2"></i>عروض الأسعار ({{ total }})</h1>
+    <a href="/quotations/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>عرض جديد</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>رقم العرض</th><th>العنوان</th><th>العميل</th>
+                <th>الإجمالي</th><th>صالح حتى</th><th>الحالة</th><th>إجراءات</th>
+            </tr></thead>
+            <tbody>
+            {% for q in quotations %}
+            <tr>
+                <td><a href="/quotations/{{ q.id }}" class="fw-semibold text-decoration-none">{{ q.quote_number }}</a></td>
+                <td>{{ q.title[:40] }}{{ '...' if q.title|length > 40 }}</td>
+                <td>{{ q.client.name if q.client else '-' }}</td>
+                <td>{{ "{:,.2f}".format(q.total) }}</td>
+                <td>{{ q.valid_until or '-' }}</td>
+                <td>
+                    <span class="badge-status badge-{{ q.status.value }}">
+                        {{ {'draft':'مسودة','sent':'مرسل','accepted':'مقبول','rejected':'مرفوض','expired':'منتهي'}[q.status.value] }}
+                    </span>
+                </td>
+                <td>
+                    <a href="/quotations/{{ q.id }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted py-4">لا توجد عروض</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer">
+        <nav><ul class="pagination mb-0 justify-content-center">
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {{ 'active' if p == page }}">
+                <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

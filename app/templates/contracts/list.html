@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}العقود{% endblock %}
+{% block page_title %}العقود{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-file-earmark-check me-2"></i>العقود ({{ total }})</h1>
+    <a href="/contracts/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>عقد جديد</a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="search" class="form-control" placeholder="بحث..." value="{{ search }}">
+            <button type="submit" class="btn btn-primary px-4">بحث</button>
+            {% if search %}<a href="/contracts" class="btn btn-outline-secondary">مسح</a>{% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>رقم العقد</th><th>العنوان</th><th>العميل</th>
+                <th>القيمة</th><th>تاريخ البداية</th><th>تاريخ النهاية</th><th>الحالة</th><th>إجراءات</th>
+            </tr></thead>
+            <tbody>
+            {% for c in contracts %}
+            <tr>
+                <td><a href="/contracts/{{ c.id }}" class="fw-semibold text-decoration-none">{{ c.contract_number }}</a></td>
+                <td>{{ c.title[:50] }}{{ '...' if c.title|length > 50 }}</td>
+                <td>{{ c.client.name if c.client else '-' }}</td>
+                <td>{{ "{:,.0f}".format(c.amount) }}</td>
+                <td>{{ c.start_date or '-' }}</td>
+                <td>{{ c.end_date or '-' }}</td>
+                <td>
+                    <span class="badge-status badge-{{ c.status.value }}">
+                        {{ {'draft':'مسودة','active':'نشط','expired':'منتهي','cancelled':'ملغي'}[c.status.value] }}
+                    </span>
+                </td>
+                <td>
+                    <a href="/contracts/{{ c.id }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                    <a href="/contracts/{{ c.id }}/edit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center text-muted py-4">لا توجد عقود</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer">
+        <nav><ul class="pagination mb-0 justify-content-center">
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {{ 'active' if p == page }}">
+                <a class="page-link" href="?page={{ p }}&search={{ search }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

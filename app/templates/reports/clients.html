@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}تقرير العملاء{% endblock %}
+{% block page_title %}تقرير العملاء{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-people me-2"></i>تقرير العملاء</h1>
+    <a href="/reports" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">من تاريخ</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">إلى تاريخ</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">عرض</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>#</th><th>العميل</th><th class="text-center">عدد الفواتير</th>
+                <th class="text-end">إجمالي الفواتير</th><th class="text-end">المحصل</th><th class="text-end">المتبقي</th>
+            </tr></thead>
+            <tbody>
+            {% for i, c in enumerate(data) %}
+            <tr>
+                <td class="text-muted fw-bold">{{ i + 1 }}</td>
+                <td><a href="/clients/{{ c.id }}">{{ c.name }}</a></td>
+                <td class="text-center">{{ c.invoice_count }}</td>
+                <td class="text-end">{{ "{:,.2f}".format(c.total_amount) }}</td>
+                <td class="text-end text-success">{{ "{:,.2f}".format(c.paid_amount) }}</td>
+                <td class="text-end text-danger">{{ "{:,.2f}".format(c.total_amount - c.paid_amount) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">لا توجد بيانات</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

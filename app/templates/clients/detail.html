@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ client.name }}{% endblock %}
+{% block page_title %}ملف العميل{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-person me-2"></i>{{ client.name }}</h1>
+    <div class="d-flex gap-2">
+        <a href="/clients/{{ client.id }}/edit" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>تعديل</a>
+        <a href="/clients" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-receipt"></i></div>
+            <div><div class="stat-value">{{ stats.total_invoices }}</div><div class="stat-label">إجمالي الفواتير</div></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon green"><i class="bi bi-cash"></i></div>
+            <div><div class="stat-value">{{ "{:,.0f}".format(stats.total_revenue) }}</div><div class="stat-label">إجمالي الإيرادات</div></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card"><div class="stat-icon orange"><i class="bi bi-file-earmark-check"></i></div>
+            <div><div class="stat-value">{{ stats.total_contracts }}</div><div class="stat-label">إجمالي العقود</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">بيانات العميل</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><th>النوع</th><td>{{ 'شركة' if client.type.value == 'company' else 'فرد' }}</td></tr>
+                    <tr><th>البريد</th><td>{{ client.email or '-' }}</td></tr>
+                    <tr><th>الهاتف</th><td>{{ client.phone or '-' }}</td></tr>
+                    <tr><th>الرقم الضريبي</th><td>{{ client.tax_number or '-' }}</td></tr>
+                    <tr><th>العنوان</th><td>{{ client.address or '-' }}</td></tr>
+                    <tr><th>تاريخ الإنشاء</th><td>{{ client.created_at.strftime('%Y-%m-%d') }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>الفواتير</span>
+                <a href="/invoices/new" class="btn btn-sm btn-primary">فاتورة جديدة</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>الرقم</th><th>التاريخ</th><th>الإجمالي</th><th>الحالة</th></tr></thead>
+                    <tbody>
+                    {% for inv in client.invoices.limit(10) %}
+                    <tr>
+                        <td><a href="/invoices/{{ inv.id }}">{{ inv.invoice_number }}</a></td>
+                        <td>{{ inv.issue_date }}</td>
+                        <td>{{ "{:,.0f}".format(inv.total) }}</td>
+                        <td><span class="badge-status badge-{{ inv.status.value }}">{{ inv.status.value }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">لا توجد فواتير</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
