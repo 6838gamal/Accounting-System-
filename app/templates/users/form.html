@@ -4,60 +4,214 @@
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="bi bi-person-plus me-2"></i>{{ 'تعديل مستخدم' if user else 'مستخدم جديد' }}</h1>
-    <a href="/users" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>رجوع</a>
+    <h1>
+        <i class="bi bi-person-{{ 'pencil' if user else 'plus' }} me-2"></i>
+        {{ 'تعديل: ' + user.full_name if user else 'مستخدم جديد' }}
+    </h1>
+    <a href="/users" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>رجوع
+    </a>
 </div>
 
 {% if error %}
-<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
 {% endif %}
 
 <div class="card">
     <div class="card-body">
-        <form method="post" action="{{ '/users/' + user.id|string + '/edit' if user else '/users/new' }}">
+        <form method="post"
+              action="{{ '/users/' + user.id|string + '/edit' if user else '/users/new' }}"
+              novalidate
+              id="userForm">
+
             <div class="row g-3">
+
+                {# ── اسم المستخدم (إنشاء فقط) ── #}
                 {% if not user %}
                 <div class="col-md-6">
-                    <label class="form-label">اسم المستخدم <span class="text-danger">*</span></label>
-                    <input type="text" name="username" class="form-control" required>
+                    <label class="form-label fw-semibold">
+                        اسم المستخدم <span class="text-danger">*</span>
+                    </label>
+                    <input type="text"
+                           name="username"
+                           class="form-control"
+                           value="{{ form_data.username if form_data else '' }}"
+                           required
+                           minlength="3"
+                           maxlength="50"
+                           pattern="[a-zA-Z0-9_]+"
+                           autocomplete="username"
+                           placeholder="مثال: ahmed_ali">
+                    <div class="form-text">حروف إنجليزية وأرقام وشرطة سفلية فقط</div>
                 </div>
                 {% endif %}
+
+                {# ── الاسم الكامل ── #}
                 <div class="col-md-6">
-                    <label class="form-label">الاسم الكامل <span class="text-danger">*</span></label>
-                    <input type="text" name="full_name" class="form-control" value="{{ user.full_name if user else '' }}" required>
+                    <label class="form-label fw-semibold">
+                        الاسم الكامل <span class="text-danger">*</span>
+                    </label>
+                    <input type="text"
+                           name="full_name"
+                           class="form-control"
+                           value="{{ user.full_name if user else (form_data.full_name if form_data else '') }}"
+                           required
+                           maxlength="100"
+                           autocomplete="name">
                 </div>
+
+                {# ── البريد الإلكتروني ── #}
                 <div class="col-md-6">
-                    <label class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>
-                    <input type="email" name="email" class="form-control" value="{{ user.email if user else '' }}" required>
+                    <label class="form-label fw-semibold">
+                        البريد الإلكتروني <span class="text-danger">*</span>
+                    </label>
+                    <input type="email"
+                           name="email"
+                           class="form-control"
+                           value="{{ user.email if user else (form_data.email if form_data else '') }}"
+                           required
+                           maxlength="100"
+                           autocomplete="email">
                 </div>
+
+                {# ── الدور ── #}
                 <div class="col-md-6">
-                    <label class="form-label">الدور</label>
+                    <label class="form-label fw-semibold">الدور</label>
                     <select name="role" class="form-select">
-                        <option value="admin" {{ 'selected' if user and user.role.value == 'admin' }}>مشرف</option>
-                        <option value="manager" {{ 'selected' if user and user.role.value == 'manager' }}>مدير</option>
-                        <option value="accountant" {{ 'selected' if not user or user.role.value == 'accountant' }}>محاسب</option>
-                        <option value="viewer" {{ 'selected' if user and user.role.value == 'viewer' }}>مشاهد</option>
+                        {% set current_role = user.role.value if user else (form_data.role if form_data else 'accountant') %}
+                        <option value="admin"      {{ 'selected' if current_role == 'admin' }}>مشرف</option>
+                        <option value="manager"    {{ 'selected' if current_role == 'manager' }}>مدير</option>
+                        <option value="accountant" {{ 'selected' if current_role == 'accountant' }}>محاسب</option>
+                        <option value="viewer"     {{ 'selected' if current_role == 'viewer' }}>مشاهد</option>
                     </select>
                 </div>
+
+                {# ── كلمة المرور ── #}
                 <div class="col-md-6">
-                    <label class="form-label">كلمة المرور {{ '' if user else '(مطلوبة)' }}</label>
-                    <input type="password" name="password" class="form-control" {{ 'required' if not user }}>
-                    {% if user %}<div class="form-text">اتركه فارغاً إذا لم تريد التغيير</div>{% endif %}
+                    <label class="form-label fw-semibold">
+                        كلمة المرور
+                        {% if not user %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    <div class="input-group">
+                        <input type="password"
+                               name="password"
+                               id="passwordInput"
+                               class="form-control"
+                               {{ 'required' if not user }}
+                               minlength="8"
+                               maxlength="128"
+                               autocomplete="{{ 'new-password' }}">
+                        <button class="btn btn-outline-secondary"
+                                type="button"
+                                onclick="togglePassword()"
+                                title="إظهار/إخفاء">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    {% if user %}
+                    <div class="form-text">اتركها فارغة إذا لم تريد تغيير كلمة المرور</div>
+                    {% else %}
+                    <div class="form-text">8 أحرف على الأقل</div>
+                    {% endif %}
+
+                    {# Password strength bar (shown only when typing) #}
+                    <div id="strengthBar" class="mt-2" style="display:none">
+                        <div class="progress" style="height:6px">
+                            <div id="strengthFill" class="progress-bar" style="width:0%"></div>
+                        </div>
+                        <small id="strengthLabel" class="text-muted"></small>
+                    </div>
                 </div>
+
+                {# ── حالة الحساب (تعديل فقط) ── #}
                 {% if user %}
                 <div class="col-md-6 d-flex align-items-center">
-                    <div class="form-check mt-3">
-                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {{ 'checked' if user.is_active }} value="true">
-                        <label class="form-check-label" for="is_active">الحساب نشط</label>
+                    <div class="mt-2">
+                        <label class="form-label fw-semibold d-block">حالة الحساب</label>
+                        {# Hidden fallback so "false" is sent when checkbox unchecked #}
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="is_active"
+                                   id="is_active"
+                                   value="true"
+                                   {{ 'checked' if user.is_active }}
+                                   role="switch">
+                            <label class="form-check-label" for="is_active">
+                                {{ 'نشط' if user.is_active else 'معطل' }}
+                            </label>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
-            </div>
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>حفظ</button>
+
+            </div>{# /row #}
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check-lg me-1"></i>حفظ
+                </button>
                 <a href="/users" class="btn btn-outline-secondary">إلغاء</a>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword() {
+    const input = document.getElementById('passwordInput');
+    const icon  = document.getElementById('eyeIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+
+document.getElementById('passwordInput').addEventListener('input', function () {
+    const val = this.value;
+    const bar  = document.getElementById('strengthBar');
+    const fill = document.getElementById('strengthFill');
+    const lbl  = document.getElementById('strengthLabel');
+
+    if (!val) { bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+
+    let score = 0;
+    if (val.length >= 8)  score++;
+    if (val.length >= 12) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+    const levels = [
+        { pct: 20,  cls: 'bg-danger',  txt: 'ضعيفة جداً' },
+        { pct: 40,  cls: 'bg-warning', txt: 'ضعيفة' },
+        { pct: 60,  cls: 'bg-info',    txt: 'متوسطة' },
+        { pct: 80,  cls: 'bg-primary', txt: 'جيدة' },
+        { pct: 100, cls: 'bg-success', txt: 'قوية' },
+    ];
+    const lvl = levels[Math.min(score, 4)];
+    fill.style.width = lvl.pct + '%';
+    fill.className = 'progress-bar ' + lvl.cls;
+    lbl.textContent = 'قوة كلمة المرور: ' + lvl.txt;
+});
+
+// Update is_active label live
+const toggle = document.getElementById('is_active');
+if (toggle) {
+    toggle.addEventListener('change', function () {
+        this.nextElementSibling.textContent = this.checked ? 'نشط' : 'معطل';
+    });
+}
+</script>
 {% endblock %}
