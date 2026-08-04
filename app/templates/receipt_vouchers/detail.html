@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}سند استلام {{ voucher.voucher_number }}{% endblock %}
+{% block page_title %}سند استلام{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-arrow-down-circle me-2"></i>سند استلام — {{ voucher.voucher_number }}</h1>
+    <div class="d-flex gap-2">
+        <a href="/receipt-vouchers/{{ voucher.id }}/print" class="btn btn-outline-success" target="_blank">
+            <i class="bi bi-printer me-1"></i>طباعة / تصدير
+        </a>
+        <a href="/receipt-vouchers" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right me-1"></i>رجوع
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header fw-semibold">تفاصيل السند</div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th class="text-muted" style="width:180px">رقم السند</th>
+                        <td><span class="badge bg-success fs-6">{{ voucher.voucher_number }}</span></td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">التاريخ</th>
+                        <td>{{ voucher.voucher_date }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">المستلم منه</th>
+                        <td class="fw-bold fs-5">{{ voucher.received_from }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">المبلغ</th>
+                        <td><span class="fs-4 fw-bold text-success">{{ "{:,.2f}".format(voucher.amount) }} {{ settings.get('currency','SAR') }}</span></td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">طريقة الاستلام</th>
+                        <td>{{ method_labels.get(voucher.method.value, voucher.method.value) }}</td>
+                    </tr>
+                    {% if voucher.client %}
+                    <tr>
+                        <th class="text-muted">العميل</th>
+                        <td><a href="/clients/{{ voucher.client.id }}">{{ voucher.client.name }}</a></td>
+                    </tr>
+                    {% endif %}
+                    {% if voucher.reference %}
+                    <tr>
+                        <th class="text-muted">رقم المرجع</th>
+                        <td>{{ voucher.reference }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if voucher.description %}
+                    <tr>
+                        <th class="text-muted">البيان</th>
+                        <td>{{ voucher.description }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if voucher.notes %}
+                    <tr>
+                        <th class="text-muted">ملاحظات</th>
+                        <td>{{ voucher.notes }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th class="text-muted">تاريخ الإنشاء</th>
+                        <td class="text-muted small">{{ voucher.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-success-subtle">
+            <div class="card-body text-center py-4">
+                <div class="text-muted mb-1">إجمالي المستلم</div>
+                <div class="display-5 fw-bold text-success mb-1">{{ "{:,.2f}".format(voucher.amount) }}</div>
+                <div class="text-muted">{{ settings.get('currency_name','ريال سعودي') }}</div>
+                <hr>
+                <a href="/receipt-vouchers/{{ voucher.id }}/print" class="btn btn-success w-100 mb-2" target="_blank">
+                    <i class="bi bi-printer me-1"></i>طباعة السند
+                </a>
+                <form method="post" action="/receipt-vouchers/{{ voucher.id }}/delete"
+                      onsubmit="return confirm('هل أنت متأكد من حذف هذا السند؟')">
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-trash me-1"></i>حذف السند
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

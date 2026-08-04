@@ -43,8 +43,18 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/expenses" class="nav-link {% if request.url.path.startswith('/expenses') %}active{% endif %}">
+                <a href="/expenses" class="nav-link {% if request.url.path.startswith('/expenses') and not request.url.path.startswith('/expense-vouchers') %}active{% endif %}">
                     <i class="bi bi-wallet2"></i> المصروفات
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/expense-vouchers" class="nav-link {% if request.url.path.startswith('/expense-vouchers') %}active{% endif %}">
+                    <i class="bi bi-cash-stack"></i> سندات المصاريف
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/receipt-vouchers" class="nav-link {% if request.url.path.startswith('/receipt-vouchers') %}active{% endif %}">
+                    <i class="bi bi-arrow-down-circle"></i> سندات الاستلام
                 </a>
             </li>
             <li class="nav-section">الأعمال</li>

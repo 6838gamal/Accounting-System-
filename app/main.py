@@ -16,6 +16,7 @@ from app.routers import (
     quotations, invoices, payments, expenses,
     reports, settings as settings_router, activity_log,
 )
+from app.routers import expense_vouchers, receipt_vouchers
 
 # إنشاء مجلد الرفع إن لم يكن موجوداً
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -53,6 +54,8 @@ app.include_router(quotations.router)
 app.include_router(invoices.router)
 app.include_router(payments.router)
 app.include_router(expenses.router)
+app.include_router(expense_vouchers.router)
+app.include_router(receipt_vouchers.router)
 app.include_router(reports.router)
 app.include_router(settings_router.router)
 app.include_router(activity_log.router)

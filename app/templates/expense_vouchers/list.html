@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}سندات المصاريف{% endblock %}
+{% block page_title %}سندات المصاريف{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-cash-stack me-2"></i>سندات المصاريف ({{ total }})</h1>
+    <a href="/expense-vouchers/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>سند مصروف جديد</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="text-muted small mb-1">إجمالي المصاريف</div>
+                <div class="fs-4 fw-bold text-danger">{{ "{:,.2f}".format(total_amount) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="text-muted small mb-1">عدد السندات</div>
+                <div class="fs-4 fw-bold text-primary">{{ total }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr>
+                <th>رقم السند</th>
+                <th>التاريخ</th>
+                <th>المستفيد</th>
+                <th>البيان</th>
+                <th>طريقة الدفع</th>
+                <th>الفئة</th>
+                <th>المبلغ</th>
+                <th>إجراءات</th>
+            </tr></thead>
+            <tbody>
+            {% for v in vouchers %}
+            <tr>
+                <td><span class="badge bg-secondary">{{ v.voucher_number }}</span></td>
+                <td>{{ v.voucher_date }}</td>
+                <td class="fw-semibold">{{ v.payee }}</td>
+                <td class="text-muted small">{{ v.description[:50] + '…' if v.description and v.description|length > 50 else (v.description or '-') }}</td>
+                <td>{{ method_labels.get(v.method.value, v.method.value) }}</td>
+                <td>{{ v.category or '-' }}</td>
+                <td class="fw-bold text-danger">{{ "{:,.2f}".format(v.amount) }}</td>
+                <td>
+                    <a href="/expense-vouchers/{{ v.id }}" class="btn btn-sm btn-outline-primary" title="عرض">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="/expense-vouchers/{{ v.id }}/print" class="btn btn-sm btn-outline-secondary" title="طباعة" target="_blank">
+                        <i class="bi bi-printer"></i>
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center text-muted py-5">
+                <i class="bi bi-cash-stack fs-3 d-block mb-2 opacity-25"></i>
+                لا توجد سندات مصاريف بعد
+            </td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer">
+        <nav><ul class="pagination mb-0 justify-content-center">
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {{ 'active' if p == page }}">
+                <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

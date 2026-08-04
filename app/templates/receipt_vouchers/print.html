@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سند استلام {{ voucher.voucher_number }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            font-size: 13px;
+            color: #1e293b;
+            background: #f0fdf4;
+            direction: rtl;
+        }
+        .print-actions {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 999;
+        }
+        .btn-print { padding: 8px 20px; background: #16a34a; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .btn-back  { padding: 8px 20px; background: #e2e8f0; color: #1e293b; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-block; }
+        @media print {
+            .print-actions { display: none; }
+            body { background: #fff; }
+        }
+
+        .page {
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+
+        /* ترويسة */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid #16a34a;
+            padding-bottom: 20px;
+            margin-bottom: 28px;
+        }
+        .company-name { font-size: 20px; font-weight: 700; color: #16a34a; margin-bottom: 4px; }
+        .company-sub  { font-size: 12px; color: #64748b; line-height: 1.6; }
+        .voucher-type {
+            text-align: left;
+            background: #dcfce7;
+            border-radius: 8px;
+            padding: 10px 18px;
+        }
+        .voucher-type-label { font-size: 11px; color: #166534; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .voucher-number { font-size: 22px; font-weight: 700; color: #16a34a; }
+        .voucher-date   { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+        /* مربع المبلغ */
+        .amount-box {
+            background: #dcfce7;
+            border: 2px solid #86efac;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .amount-label   { font-size: 13px; color: #166534; margin-bottom: 4px; }
+        .amount-value   { font-size: 38px; font-weight: 700; color: #16a34a; }
+        .amount-currency{ font-size: 16px; color: #15803d; margin-top: 2px; }
+
+        /* جدول التفاصيل */
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+        .details-table tr { border-bottom: 1px solid #f1f5f9; }
+        .details-table tr:last-child { border-bottom: none; }
+        .details-table th {
+            padding: 10px 14px;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            text-align: right;
+            width: 160px;
+            background: #f8fafc;
+        }
+        .details-table td {
+            padding: 10px 14px;
+            font-weight: 500;
+        }
+
+        /* التوقيعات */
+        .signatures {
+            display: flex;
+            gap: 20px;
+            margin-top: 36px;
+            padding-top: 20px;
+            border-top: 1px dashed #cbd5e1;
+        }
+        .sig-box {
+            flex: 1;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px;
+            background: #f8fafc;
+        }
+        .sig-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 40px; }
+        .sig-line  { border-top: 1px solid #94a3b8; padding-top: 6px; font-size: 11px; color: #64748b; }
+
+        /* تذييل */
+        .footer {
+            margin-top: 28px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+        }
+        .badge-method {
+            display: inline-block;
+            padding: 3px 10px;
+            background: #f0fdf4;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="print-actions">
+    <button class="btn-print" onclick="window.print()">🖨️ طباعة</button>
+    <a class="btn-back" href="/receipt-vouchers/{{ voucher.id }}">← رجوع</a>
+</div>
+
+<div class="page">
+    <!-- ترويسة -->
+    <div class="header">
+        <div>
+            <div class="company-name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+            <div class="company-sub">
+                {% if settings.get('company_address') %}<div>{{ settings.get('company_address') }}</div>{% endif %}
+                {% if settings.get('company_phone') %}<div>هاتف: {{ settings.get('company_phone') }}</div>{% endif %}
+                {% if settings.get('company_email') %}<div>{{ settings.get('company_email') }}</div>{% endif %}
+                {% if settings.get('company_tax_number') %}<div>الرقم الضريبي: {{ settings.get('company_tax_number') }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="voucher-type">
+            <div class="voucher-type-label">سند استلام</div>
+            <div class="voucher-number">{{ voucher.voucher_number }}</div>
+            <div class="voucher-date">{{ voucher.voucher_date }}</div>
+        </div>
+    </div>
+
+    <!-- المبلغ البارز -->
+    <div class="amount-box">
+        <div class="amount-label">المبلغ المستلم</div>
+        <div class="amount-value">{{ "{:,.2f}".format(voucher.amount) }}</div>
+        <div class="amount-currency">{{ settings.get('currency_name', 'ريال سعودي') }} ({{ settings.get('currency', 'SAR') }})</div>
+    </div>
+
+    <!-- تفاصيل السند -->
+    <table class="details-table">
+        <tr>
+            <th>استُلم من</th>
+            <td style="font-size:16px;font-weight:700;">{{ voucher.received_from }}</td>
+        </tr>
+        <tr>
+            <th>طريقة الاستلام</th>
+            <td><span class="badge-method">{{ method_labels.get(voucher.method.value, voucher.method.value) }}</span></td>
+        </tr>
+        {% if voucher.client %}
+        <tr>
+            <th>العميل</th>
+            <td>{{ voucher.client.name }}</td>
+        </tr>
+        {% endif %}
+        {% if voucher.reference %}
+        <tr>
+            <th>رقم المرجع</th>
+            <td>{{ voucher.reference }}</td>
+        </tr>
+        {% endif %}
+        {% if voucher.description %}
+        <tr>
+            <th>البيان</th>
+            <td>{{ voucher.description }}</td>
+        </tr>
+        {% endif %}
+        {% if voucher.notes %}
+        <tr>
+            <th>ملاحظات</th>
+            <td style="color:#64748b">{{ voucher.notes }}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    <!-- التوقيعات -->
+    <div class="signatures">
+        <div class="sig-box">
+            <div class="sig-label">توقيع المعتمِد</div>
+            <div class="sig-line">{{ settings.get('pdf_signatory_title', 'المدير العام') }}</div>
+        </div>
+        <div class="sig-box">
+            <div class="sig-label">توقيع المحاسب</div>
+            <div class="sig-line">المحاسب</div>
+        </div>
+        <div class="sig-box">
+            <div class="sig-label">توقيع الدافع (تأكيد الدفع)</div>
+            <div class="sig-line">{{ voucher.received_from }}</div>
+        </div>
+    </div>
+
+    <!-- تذييل -->
+    <div class="footer">
+        {{ settings.get('company_name', '') }}
+        {% if settings.get('company_phone') %} | {{ settings.get('company_phone') }}{% endif %}
+        {% if settings.get('pdf_footer_text') %} | {{ settings.get('pdf_footer_text') }}{% endif %}
+    </div>
+</div>
+
+</body>
+</html>
