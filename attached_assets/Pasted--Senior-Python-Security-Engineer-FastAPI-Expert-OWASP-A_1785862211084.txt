@@ -1,0 +1,580 @@
+أنت تعمل كفريق مكون من:
+
+- Senior Python Security Engineer
+- FastAPI Expert
+- OWASP ASVS Auditor
+- Penetration Tester
+- Backend Architect
+- DevSecOps Engineer
+- Production Reliability Engineer
+
+مهمتك هي مراجعة مشروع FastAPI بالكامل وكأنك ستقدمه إلى لجنة مراجعة أمنية (Security Review Board).
+
+لا تكتفِ بذكر المشاكل، بل قم بتعديل الكود وإضافة ما يلزم وفق أفضل الممارسات الحديثة.
+
+==================================================
+الأهداف
+==================================================
+
+أريد الوصول إلى مشروع Production Ready من حيث:
+
+- Security
+- Stability
+- Reliability
+- Error Handling
+- Scalability
+- Maintainability
+
+بحيث لا يستطيع المستخدم أو المهاجم إسقاط النظام بسهولة.
+
+==================================================
+راجع المشروع بالكامل
+==================================================
+
+افحص:
+
+- هيكل المشروع
+- جميع ملفات Python
+- FastAPI
+- Authentication
+- Authorization
+- Routes
+- Services
+- Database
+- Middleware
+- Dependencies
+- Logging
+- Exception Handling
+- File Uploads
+- Static Files
+- Configuration
+- Docker
+- Environment Variables
+- API Responses
+
+==================================================
+Security Review
+==================================================
+
+افحص وجود:
+
+✓ SQL Injection
+
+✓ NoSQL Injection
+
+✓ Command Injection
+
+✓ Path Traversal
+
+✓ Directory Traversal
+
+✓ XXE
+
+✓ SSRF
+
+✓ CSRF
+
+✓ XSS
+
+✓ Header Injection
+
+✓ Host Header Attacks
+
+✓ HTTP Response Splitting
+
+✓ Session Fixation
+
+✓ Session Hijacking
+
+✓ Broken Authentication
+
+✓ Broken Authorization
+
+✓ Broken Access Control
+
+✓ IDOR
+
+✓ JWT Vulnerabilities
+
+✓ Weak Password Policies
+
+✓ Token Leakage
+
+✓ Token Replay
+
+✓ Refresh Token Issues
+
+✓ CORS Misconfiguration
+
+✓ Cookie Security
+
+✓ Clickjacking
+
+✓ MIME Sniffing
+
+✓ Open Redirect
+
+✓ Information Disclosure
+
+✓ Race Conditions
+
+✓ Timing Attacks
+
+✓ Enumeration Attacks
+
+✓ Brute Force
+
+✓ Credential Stuffing
+
+✓ Rate Limit Bypass
+
+✓ File Upload Attacks
+
+✓ Dangerous File Types
+
+✓ Malware Upload
+
+✓ Zip Bomb
+
+✓ Large Request DoS
+
+✓ Slowloris
+
+✓ Dependency Vulnerabilities
+
+✓ Secret Leakage
+
+✓ Hardcoded Credentials
+
+✓ Debug Mode
+
+✓ Stack Trace Exposure
+
+✓ Sensitive Data Exposure
+
+✓ Missing Security Headers
+
+==================================================
+تحقق من FastAPI Best Practices
+==================================================
+
+تأكد من وجود:
+
+- Security Middleware
+- Trusted Host Middleware
+- HTTPS Redirect (Production)
+- GZip
+- Request Validation
+- Response Validation
+- Dependency Injection
+- Proper Lifespan Events
+- Async Best Practices
+- Connection Pooling
+- Timeout Handling
+
+==================================================
+تحقق من الاستثناءات
+==================================================
+
+أي Exception غير معالج يجب إصلاحه.
+
+أضف:
+
+Global Exception Handler
+
+Request Validation Handler
+
+Database Exception Handler
+
+HTTP Exception Handler
+
+Unhandled Exception Handler
+
+==================================================
+الهدف من الأخطاء
+==================================================
+
+لا أريد أن يرى المستخدم:
+
+Traceback
+
+Internal Errors
+
+Python Errors
+
+Database Errors
+
+File Paths
+
+Secrets
+
+Environment Variables
+
+أريد رسائل احترافية مثل:
+
+{
+  "success": false,
+  "message": "حدث خطأ غير متوقع، يرجى المحاولة لاحقًا.",
+  "error_code": "INTERNAL_ERROR"
+}
+
+بينما يتم تسجيل الخطأ الحقيقي في الـ Logs فقط.
+
+==================================================
+Logging
+==================================================
+
+راجع نظام التسجيل بالكامل.
+
+أضف:
+
+Structured Logging
+
+Request ID
+
+Correlation ID
+
+Error Logging
+
+Security Logging
+
+Audit Logging
+
+Rotating Logs
+
+لا تقم بتسجيل:
+
+Passwords
+
+Tokens
+
+Secrets
+
+Credit Cards
+
+Sensitive Personal Data
+
+==================================================
+Validation
+==================================================
+
+راجع جميع المدخلات.
+
+استخدم:
+
+Pydantic Validation
+
+Length Limits
+
+Regex
+
+Enums
+
+Sanitization
+
+Whitelisting
+
+Reject Invalid Inputs
+
+==================================================
+Rate Limiting
+==================================================
+
+إذا لم يوجد Rate Limiter:
+
+أضفه.
+
+مع حماية من:
+
+Brute Force
+
+Spam
+
+Flooding
+
+==================================================
+Authentication
+==================================================
+
+راجع:
+
+JWT
+
+Expiration
+
+Refresh Tokens
+
+Secret Keys
+
+Algorithms
+
+Token Rotation
+
+Password Hashing
+
+Password Verification
+
+Logout Security
+
+==================================================
+Authorization
+==================================================
+
+تحقق من:
+
+Role Based Access Control (RBAC)
+
+Permission Checks
+
+Object Ownership
+
+Least Privilege
+
+==================================================
+Database
+==================================================
+
+راجع:
+
+SQLAlchemy
+
+Async Sessions
+
+Transactions
+
+Rollback
+
+Connection Pool
+
+Deadlocks
+
+N+1 Queries
+
+Parameterized Queries
+
+Indexes
+
+==================================================
+رفع الملفات
+==================================================
+
+راجع:
+
+Allowed Extensions
+
+MIME Validation
+
+Size Limits
+
+Random File Names
+
+Virus Scan Hooks
+
+Storage Isolation
+
+==================================================
+CORS
+==================================================
+
+تأكد أن الإعدادات Production جاهزة.
+
+لا تستخدم:
+
+allow_origins=["*"]
+
+إذا كان Authentication موجودًا.
+
+==================================================
+Headers
+==================================================
+
+أضف أو تحقق من:
+
+Content Security Policy
+
+X-Frame-Options
+
+Referrer Policy
+
+Permissions Policy
+
+Strict Transport Security
+
+X-Content-Type-Options
+
+==================================================
+Environment
+==================================================
+
+راجع:
+
+.env
+
+Secrets
+
+API Keys
+
+Production Settings
+
+Development Settings
+
+==================================================
+Docker
+==================================================
+
+راجع:
+
+Dockerfile
+
+docker-compose
+
+User غير Root
+
+Health Checks
+
+Minimal Images
+
+==================================================
+DoS Protection
+==================================================
+
+أضف الحماية ضد:
+
+Huge Requests
+
+Slow Requests
+
+Repeated Requests
+
+Memory Exhaustion
+
+==================================================
+Graceful Failure
+==================================================
+
+إذا حدث:
+
+Database Down
+
+Redis Down
+
+Network Failure
+
+Disk Full
+
+Permission Error
+
+Timeout
+
+Memory Error
+
+External API Failure
+
+File System Failure
+
+يجب ألا يتوقف النظام بالكامل.
+
+بل:
+
+- تسجيل الخطأ
+- إعادة Response مناسبة
+- استمرار بقية الخدمات بالعمل
+
+==================================================
+Reliability
+==================================================
+
+اجعل النظام:
+
+Fault Tolerant
+
+Graceful Shutdown
+
+Graceful Startup
+
+Retry Mechanism
+
+Circuit Breaker (عند الحاجة)
+
+Timeouts
+
+Fallback Logic
+
+==================================================
+Code Quality
+==================================================
+
+راجع:
+
+Typing
+
+Lint
+
+Dead Code
+
+Duplicated Code
+
+Naming
+
+Architecture
+
+Dependency Injection
+
+SOLID
+
+Clean Architecture
+
+==================================================
+النتيجة المطلوبة
+==================================================
+
+لا تعطني تقريرًا فقط.
+
+بل نفذ التالي:
+
+1- اذكر المشكلة.
+
+2- لماذا هي خطيرة.
+
+3- كيف استغلها المهاجم.
+
+4- مستوى الخطورة:
+
+Critical
+
+High
+
+Medium
+
+Low
+
+5- اكتب الكود الجديد.
+
+6- اذكر مكان وضعه.
+
+7- اذكر الملف.
+
+8- اذكر سبب اختيار الحل.
+
+9- إذا كان هناك أكثر من حل فقارن بينها.
+
+10- لا تنتقل للنقطة التالية حتى يتم إصلاح السابقة بالكامل.
+
+==================================================
+الهدف النهائي
+==================================================
+
+أريد أن يصبح المشروع أقرب ما يمكن إلى المعايير التالية:
+
+- OWASP Top 10
+- OWASP ASVS
+- Secure by Default
+- Defense in Depth
+- Principle of Least Privilege
+- Production Ready
+- Enterprise Ready
+- High Availability
+- Graceful Failure
+- Secure Coding Best Practices
+
+اعتبر أن المشروع سيتم مراجعته من قبل خبراء أمن سيبراني، وأي نقطة ضعف قد تؤدي إلى رفضه، لذا كن صارمًا جدًا في المراجعة ولا تفترض أن أي جزء آمن حتى يتم التحقق منه.

@@ -62,7 +62,15 @@ async def create_invoice(
 ):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
-    items = json.loads(items_json)
+    try:
+        items = json.loads(items_json) if items_json else []
+        if not isinstance(items, list):
+            raise ValueError("items_json must be a list")
+        # حد أقصى 100 بند لمنع DoS
+        if len(items) > 100:
+            items = items[:100]
+    except (json.JSONDecodeError, ValueError):
+        items = []
     service = InvoiceService(db)
     invoice = service.create(
         {
@@ -115,7 +123,14 @@ async def update_invoice(
         raise HTTPException(status_code=404, detail="الفاتورة غير موجودة")
     if existing.status.value in ("paid", "cancelled"):
         raise HTTPException(status_code=403, detail="لا يمكن تعديل فاتورة مدفوعة أو ملغاة")
-    items = json.loads(items_json)
+    try:
+        items = json.loads(items_json) if items_json else []
+        if not isinstance(items, list):
+            raise ValueError
+        if len(items) > 100:
+            items = items[:100]
+    except (json.JSONDecodeError, ValueError):
+        items = []
     service = InvoiceService(db)
     invoice = service.update(
         invoice_id,
