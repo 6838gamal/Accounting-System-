@@ -271,6 +271,106 @@
         body[data-template="minimal"] .doc-section-body { border: none; padding: 10px 0; }
         body[data-template="minimal"] .doc-header .company-name { font-size: 16px; }
 
+        /* ─── رسمي (Formal) ─── */
+        body[data-template="formal"] .doc-header {
+            background: #1e293b; padding: 20px 24px; border-radius: 6px;
+            margin: -48px -52px 24px; border-bottom: none;
+        }
+        body[data-template="formal"] .doc-header .company-name { color: #fff; }
+        body[data-template="formal"] .doc-header .company-sub  { color: #94a3b8; }
+        body[data-template="formal"] .doc-meta .doc-number     { color: #fff; }
+        body[data-template="formal"] .doc-meta .doc-date       { color: #94a3b8; }
+        body[data-template="formal"] .header-divider { height: 5px; background: var(--primary,#2563eb); border-radius: 0; display: block; margin: 0 0 22px; }
+        body[data-template="formal"] .contract-title-block { background: #f8fafc; border: 2px solid #1e293b; color: #1e293b; }
+        body[data-template="formal"] .party-box { background: #f8fafc; border: 1px solid #cbd5e1; }
+        body[data-template="formal"] .details-table th { background: #1e293b; color: #fff; border-color: #1e293b; }
+        body[data-template="formal"] .doc-section-title { background: #1e293b; color: #fff; border-radius: 6px 6px 0 0; }
+
+        /* ─── أنيق (Elegant) ─── */
+        body[data-template="elegant"] .doc-header {
+            display: block; text-align: center; border-bottom: none;
+            padding-bottom: 16px; margin-bottom: 0;
+        }
+        body[data-template="elegant"] .doc-header .company-block { display: block; }
+        body[data-template="elegant"] .doc-header .company-name  { font-size: 22px; display: block; }
+        body[data-template="elegant"] .doc-header .doc-meta      { text-align: center; min-width: unset; }
+        body[data-template="elegant"] .doc-meta .doc-number      { font-size: 16px; }
+        body[data-template="elegant"] .header-divider {
+            display: block; height: 3px; margin: 0 0 22px;
+            background: linear-gradient(to left, transparent, var(--primary,#2563eb) 30%, var(--primary,#2563eb) 70%, transparent);
+        }
+        body[data-template="elegant"] .contract-title-block {
+            background: none; border: none;
+            border-right: 5px solid var(--primary,#2563eb);
+            border-radius: 0; text-align: right; padding-right: 16px;
+        }
+        body[data-template="elegant"] .party-box { background: #f8fafc; border: 1px solid #e2e8f0; }
+        body[data-template="elegant"] .details-table th { background: #f8fafc; color: #374151; }
+        body[data-template="elegant"] .doc-section-title {
+            background: none; color: var(--primary,#2563eb);
+            border-right: 4px solid var(--primary,#2563eb); border-radius: 0;
+            padding-right: 10px;
+        }
+        body[data-template="elegant"] .doc-section-body { border-right: 4px solid #e2e8f0; border-top: 1px solid #e2e8f0; }
+
+        /* ─── مخطط (Striped) ─── */
+        body[data-template="striped"] .doc-header { border-bottom: 3px solid var(--primary,#2563eb); }
+        body[data-template="striped"] .header-divider { display: none; }
+        body[data-template="striped"] .contract-title-block { background: var(--primary,#2563eb); color: #fff; }
+        body[data-template="striped"] .party-box { border: 1px solid #e2e8f0; background: #f8fafc; }
+        body[data-template="striped"] .details-table tr:nth-child(even) td { background: #f8fafc; }
+        body[data-template="striped"] .details-table th { background: var(--primary,#2563eb); color: #fff; border-color: var(--primary,#2563eb); }
+        body[data-template="striped"] .doc-section-title { background: #f8fafc; border: 1px solid #e2e8f0; color: #374151; }
+        body[data-template="striped"] .sig-block { background: #f8fafc; }
+
+        /* ─── Custom template card extras ─── */
+        .custom-tpl-card { position: relative; }
+        .tpl-delete-btn {
+            position: absolute; top: 2px; left: 2px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #ef4444; color: #fff; border: none;
+            font-size: 11px; line-height: 1; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0; opacity: 0; transition: opacity .15s;
+        }
+        .custom-tpl-card:hover .tpl-delete-btn { opacity: 1; }
+        .tpl-preview { position: relative; }
+
+        /* Add template "+" card */
+        .template-card-add {
+            border: 2px dashed #cbd5e1; border-radius: 8px;
+            padding: 8px 5px 5px; cursor: pointer; text-align: center;
+            transition: border-color .2s, background .2s; height: 74px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+        }
+        .template-card-add:hover { border-color: #2563eb; background: #eff6ff; }
+        .template-card-add i { font-size: 18px; color: #94a3b8; }
+        .template-card-add span { font-size: 10px; font-weight: 600; color: #94a3b8; }
+
+        /* Save-template modal */
+        .tpl-modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+            z-index: 500; align-items: center; justify-content: center;
+        }
+        .tpl-modal-overlay.open { display: flex; }
+        .tpl-modal {
+            background: #fff; border-radius: 14px; padding: 24px;
+            width: min(360px, 90vw); box-shadow: 0 8px 40px rgba(0,0,0,.2);
+            direction: rtl; font-family: 'Cairo', sans-serif;
+        }
+        .tpl-modal h3 { font-size: 16px; font-weight: 700; margin: 0 0 16px; color: #1e293b; }
+        .tpl-modal-preview {
+            height: 56px; border-radius: 8px; margin-bottom: 16px;
+            border: 1px solid #e2e8f0; overflow: hidden;
+        }
+        .tpl-modal label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+        .tpl-modal input { width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-family: 'Cairo', sans-serif; font-size: 14px; outline: none; }
+        .tpl-modal input:focus { border-color: #2563eb; }
+        .tpl-modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+        .btn-tpl-save { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .btn-tpl-save:hover { background: #1d4ed8; }
+        .btn-tpl-cancel { background: #f1f5f9; color: #374151; border: none; border-radius: 8px; padding: 8px 16px; font-family: 'Cairo', sans-serif; font-size: 13px; cursor: pointer; }
+
         /* ════════════════════════
            FAB PRINT (mobile only)
         ════════════════════════ */
@@ -538,7 +638,9 @@
         <!-- Template -->
         <div class="panel-section">
             <div class="panel-section-title"><i class="bi bi-layout-text-window"></i> قالب التصميم</div>
-            <div class="template-grid">
+            <div class="template-grid" id="templateGrid">
+
+                <!-- ── Built-in templates ── -->
                 <div class="template-card active" data-tpl="modern" onclick="setTemplate('modern')">
                     <div class="tpl-preview" id="tplModernPreview"></div>
                     <div class="tpl-name">عصري</div>
@@ -551,6 +653,28 @@
                     <div class="tpl-preview" id="tplMinimalPreview"></div>
                     <div class="tpl-name">مبسط</div>
                 </div>
+                <div class="template-card" data-tpl="formal" onclick="setTemplate('formal')">
+                    <div class="tpl-preview" id="tplFormalPreview"></div>
+                    <div class="tpl-name">رسمي</div>
+                </div>
+                <div class="template-card" data-tpl="elegant" onclick="setTemplate('elegant')">
+                    <div class="tpl-preview" id="tplElegantPreview"></div>
+                    <div class="tpl-name">أنيق</div>
+                </div>
+                <div class="template-card" data-tpl="striped" onclick="setTemplate('striped')">
+                    <div class="tpl-preview" id="tplStripedPreview"></div>
+                    <div class="tpl-name">مخطط</div>
+                </div>
+
+                <!-- ── Custom saved templates ── -->
+                <div id="customTemplateCards"></div>
+
+                <!-- ── Add new template ── -->
+                <div class="template-card-add" onclick="openSaveTemplateModal()" title="حفظ التصميم الحالي كقالب">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>حفظ قالب</span>
+                </div>
+
             </div>
         </div>
 
@@ -640,6 +764,23 @@
     <i class="bi bi-printer-fill"></i>
 </button>
 
+<!-- ── Save Template Modal ── -->
+<div class="tpl-modal-overlay" id="tplModalOverlay" onclick="closeSaveTemplateModal(event)">
+    <div class="tpl-modal" onclick="event.stopPropagation()">
+        <h3><i class="bi bi-bookmark-plus" style="color:#2563eb;margin-left:6px"></i>حفظ القالب الحالي</h3>
+        <div class="tpl-modal-preview" id="tplModalPreview"></div>
+        <label>اسم القالب</label>
+        <input type="text" id="tplNameInput" placeholder="مثال: قالب الشركة الرسمي" maxlength="40"
+               onkeydown="if(event.key==='Enter') saveCurrentAsTemplate()">
+        <div class="tpl-modal-actions">
+            <button class="btn-tpl-cancel" onclick="closeSaveTemplateModal()">إلغاء</button>
+            <button class="btn-tpl-save" onclick="saveCurrentAsTemplate()">
+                <i class="bi bi-bookmark-check"></i> حفظ
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ─────────────────────────────────────────────
 // State
@@ -654,6 +795,7 @@ let sig1HasDrawing = false, sig2HasDrawing = false;
 document.addEventListener('DOMContentLoaded', () => {
     initSignaturePads();
     drawTemplatePreviews();
+    renderCustomTemplateCards();
     applyColor(currentColor);
     scalePreview();
     initDragDivider();
@@ -760,32 +902,183 @@ function removeLogo() {
 }
 
 // ─────────────────────────────────────────────
-// Template
+// Template — built-in
 // ─────────────────────────────────────────────
 function setTemplate(tpl) {
     document.body.setAttribute('data-template', tpl);
-    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
-    document.querySelector(`[data-tpl="${tpl}"]`).classList.add('active');
+    document.querySelectorAll('.template-card, .custom-tpl-card').forEach(c => c.classList.remove('active'));
+    const card = document.querySelector(`[data-tpl="${tpl}"]`);
+    if (card) card.classList.add('active');
     applyColor(currentColor);
 }
+
 function drawTemplatePreviews() {
-    const m = document.getElementById('tplModernPreview');
-    m.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;';
-    m.innerHTML = `<div style="height:7px;background:#2563eb;margin-bottom:3px"></div>
-        <div style="padding:2px 4px"><div style="height:4px;background:#dbeafe;border-radius:2px;margin-bottom:2px;width:60%"></div>
-        <div style="height:3px;background:#f1f5f9;border-radius:2px;width:90%"></div></div>`;
-    const cl = document.getElementById('tplClassicPreview');
-    cl.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;';
-    cl.innerHTML = `<div style="height:5px;background:#1e293b;margin-bottom:2px"></div>
-        <div style="height:4px;background:#2563eb;margin-bottom:4px"></div>
-        <div style="padding:2px 4px"><div style="height:4px;background:#2563eb;border-radius:2px;margin-bottom:2px;width:80%"></div>
-        <div style="height:3px;background:#f0f4ff;border-radius:2px;width:90%"></div></div>`;
-    const mn = document.getElementById('tplMinimalPreview');
-    mn.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;padding:4px 4px 2px;';
-    mn.innerHTML = `<div style="height:3px;background:#e2e8f0;margin-bottom:4px"></div>
-        <div style="height:3px;background:#f1f5f9;border-radius:2px;margin-bottom:2px;width:60%"></div>
-        <div style="height:2px;background:#2563eb;margin-bottom:4px;width:100%"></div>
-        <div style="height:2px;background:#f1f5f9;border-radius:2px;width:90%"></div>`;
+    const W = '#fff', G = '#f1f5f9', B = '#2563eb', D = '#1e293b';
+
+    const defs = {
+        tplModernPreview: `
+            <div style="height:7px;background:${B};"></div>
+            <div style="padding:3px 4px">
+                <div style="height:3px;background:#dbeafe;border-radius:2px;margin-bottom:2px;width:55%"></div>
+                <div style="height:2px;background:${G};border-radius:2px;width:85%"></div>
+                <div style="height:2px;background:${G};border-radius:2px;width:65%;margin-top:2px"></div>
+            </div>`,
+        tplClassicPreview: `
+            <div style="height:4px;background:${D};"></div>
+            <div style="height:3px;background:${B};margin-bottom:3px"></div>
+            <div style="padding:2px 4px">
+                <div style="height:4px;background:${B};border-radius:2px;margin-bottom:2px;width:75%"></div>
+                <div style="height:2px;background:#dbeafe;border-radius:2px;width:90%"></div>
+            </div>`,
+        tplMinimalPreview: `
+            <div style="padding:3px 4px 1px">
+                <div style="height:3px;background:${G};margin-bottom:3px;width:55%"></div>
+                <div style="height:2px;background:${B};margin-bottom:3px;width:100%"></div>
+                <div style="height:2px;background:${G};border-radius:2px;width:80%"></div>
+            </div>`,
+        tplFormalPreview: `
+            <div style="background:${D};padding:4px 5px;margin-bottom:3px">
+                <div style="height:3px;background:#fff;border-radius:2px;width:60%;margin-bottom:2px"></div>
+                <div style="height:2px;background:#64748b;border-radius:2px;width:40%"></div>
+            </div>
+            <div style="height:3px;background:${B};margin-bottom:2px"></div>
+            <div style="padding:0 4px"><div style="height:2px;background:${G};border-radius:2px;width:80%"></div></div>`,
+        tplElegantPreview: `
+            <div style="padding:3px 4px 1px;text-align:center">
+                <div style="height:3px;background:${B};border-radius:2px;margin:0 auto 2px;width:50%"></div>
+                <div style="height:2px;background:linear-gradient(to right,transparent,${B},transparent);"></div>
+                <div style="height:2px;background:${G};border-radius:2px;width:70%;margin:2px auto 0"></div>
+            </div>`,
+        tplStripedPreview: `
+            <div style="height:6px;background:${B};margin-bottom:2px"></div>
+            <div style="padding:2px 4px">
+                <div style="height:4px;background:${B};border-radius:2px;margin-bottom:2px;width:80%"></div>
+                <div style="height:2px;background:${G};width:100%;margin-bottom:1px"></div>
+                <div style="height:2px;background:#fff;width:100%;border:1px solid ${G}"></div>
+            </div>`
+    };
+
+    Object.entries(defs).forEach(([id, html]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;';
+        el.innerHTML = html;
+    });
+}
+
+// ─────────────────────────────────────────────
+// Template — custom (localStorage)
+// ─────────────────────────────────────────────
+const CUSTOM_TPL_KEY = 'contract_custom_templates_v1';
+
+function loadCustomTemplates() {
+    try { return JSON.parse(localStorage.getItem(CUSTOM_TPL_KEY) || '[]'); }
+    catch { return []; }
+}
+function saveCustomTemplates(list) {
+    localStorage.setItem(CUSTOM_TPL_KEY, JSON.stringify(list));
+}
+
+function openSaveTemplateModal() {
+    // Build a mini preview in the modal
+    const c = currentColor;
+    const tpl = document.body.getAttribute('data-template');
+    const preview = document.getElementById('tplModalPreview');
+    preview.style.background = '#fff';
+    if (tpl === 'formal') {
+        preview.innerHTML = `<div style="background:#1e293b;padding:8px 12px">
+            <div style="height:6px;background:#fff;border-radius:3px;width:40%;margin-bottom:4px"></div>
+        </div><div style="height:5px;background:${c}"></div>`;
+    } else if (tpl === 'classic') {
+        preview.innerHTML = `<div style="height:5px;background:#1e293b"></div>
+            <div style="height:4px;background:${c};margin-bottom:6px"></div>
+            <div style="padding:4px 12px"><div style="height:6px;background:${c};border-radius:3px;width:55%"></div></div>`;
+    } else if (tpl === 'elegant') {
+        preview.innerHTML = `<div style="padding:8px;text-align:center">
+            <div style="height:5px;background:${c};border-radius:3px;width:40%;margin:0 auto 4px"></div>
+            <div style="height:2px;background:linear-gradient(to right,transparent,${c},transparent)"></div></div>`;
+    } else if (tpl === 'striped') {
+        preview.innerHTML = `<div style="height:6px;background:${c}"></div>
+            <div style="padding:4px 12px"><div style="height:6px;background:${c};border-radius:3px;width:55%;margin-bottom:3px"></div>
+            <div style="height:4px;background:#f1f5f9;width:100%"></div></div>`;
+    } else if (tpl === 'minimal') {
+        preview.innerHTML = `<div style="padding:8px 12px">
+            <div style="height:4px;background:#e2e8f0;margin-bottom:6px"></div>
+            <div style="height:2px;background:${c};margin-bottom:4px"></div>
+            <div style="height:3px;background:#f1f5f9;border-radius:2px;width:70%"></div></div>`;
+    } else {
+        preview.innerHTML = `<div style="height:7px;background:${c}"></div>
+            <div style="padding:4px 12px"><div style="height:6px;background:${c}22;border-radius:3px;width:55%;margin-bottom:3px"></div>
+            <div style="height:3px;background:#f1f5f9;border-radius:2px;width:80%"></div></div>`;
+    }
+    document.getElementById('tplNameInput').value = '';
+    document.getElementById('tplModalOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('tplNameInput').focus(), 100);
+}
+
+function closeSaveTemplateModal(e) {
+    if (e && e.target !== document.getElementById('tplModalOverlay')) return;
+    document.getElementById('tplModalOverlay').classList.remove('open');
+}
+
+function saveCurrentAsTemplate() {
+    const name = document.getElementById('tplNameInput').value.trim();
+    if (!name) { document.getElementById('tplNameInput').focus(); return; }
+    const list = loadCustomTemplates();
+    list.push({
+        id: 'custom_' + Date.now(),
+        name,
+        baseTpl: document.body.getAttribute('data-template'),
+        color: currentColor,
+        font: document.getElementById('fontSelect').value,
+    });
+    saveCustomTemplates(list);
+    document.getElementById('tplModalOverlay').classList.remove('open');
+    renderCustomTemplateCards();
+}
+
+function renderCustomTemplateCards() {
+    const list = loadCustomTemplates();
+    const container = document.getElementById('customTemplateCards');
+    container.innerHTML = '';
+    container.style.display = 'contents'; // participates in CSS grid
+
+    list.forEach(tpl => {
+        const c = tpl.color || '#2563eb';
+        const card = document.createElement('div');
+        card.className = 'template-card custom-tpl-card';
+        card.setAttribute('data-tpl', tpl.id);
+        card.innerHTML = `
+            <div class="tpl-preview" style="background:#fff;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;position:relative;">
+                <div style="height:6px;background:${c}"></div>
+                <div style="padding:2px 4px">
+                    <div style="height:3px;background:${c}44;border-radius:2px;width:60%;margin-bottom:2px"></div>
+                    <div style="height:2px;background:#f1f5f9;border-radius:2px;width:85%"></div>
+                </div>
+                <button class="tpl-delete-btn" onclick="deleteCustomTemplate('${tpl.id}',event)" title="حذف القالب">×</button>
+            </div>
+            <div class="tpl-name" style="font-size:10px;line-height:1.2;word-break:break-word">${tpl.name}</div>`;
+        card.addEventListener('click', () => applyCustomTemplate(tpl));
+        container.appendChild(card);
+    });
+}
+
+function applyCustomTemplate(tpl) {
+    document.body.setAttribute('data-template', tpl.baseTpl);
+    document.querySelectorAll('.template-card, .custom-tpl-card').forEach(c => c.classList.remove('active'));
+    const card = document.querySelector(`[data-tpl="${tpl.id}"]`);
+    if (card) card.classList.add('active');
+    setColor(tpl.color, null);
+    const fontSel = document.getElementById('fontSelect');
+    fontSel.value = tpl.font;
+    setFont(tpl.font);
+}
+
+function deleteCustomTemplate(id, e) {
+    e.stopPropagation();
+    if (!confirm('حذف هذا القالب المحفوظ؟')) return;
+    saveCustomTemplates(loadCustomTemplates().filter(t => t.id !== id));
+    renderCustomTemplateCards();
 }
 
 // ─────────────────────────────────────────────
