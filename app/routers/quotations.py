@@ -126,7 +126,7 @@ async def download_quotation_pdf(request: Request, qid: int, db: Session = Depen
     if not q:
         raise HTTPException(status_code=404)
     company_settings = SettingsService(db).get_all()
-    from app.services.pdf_service import generate_quotation_pdf
+    from app.services.html_pdf_service import generate_quotation_pdf
     pdf_bytes = generate_quotation_pdf(q, company_settings)
     filename = f"quotation-{q.quote_number}.pdf"
     return Response(

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+{# ================================================================
+   قالب عرض سعر PDF
+   يمكن تعديل هذا الملف مباشرة لتغيير تخطيط عرض السعر
+   المتغيرات المتاحة: quotation, settings, primary_color, currency, fonts_path, custom_css, watermark, show_signatures
+   ================================================================ #}
+<html dir="rtl">
+<head>
+    {% include "pdf/_styles.html" %}
+    <title>عرض سعر {{ quotation.quote_number }}</title>
+</head>
+<body>
+
+{% if watermark %}<div class="watermark">{{ watermark }}</div>{% endif %}
+
+{# ── الترويسة ── #}
+<table class="header-table">
+    <tr>
+        <td class="header-logo">
+            {% if settings.get('company_logo') %}
+            <img src="{{ settings.get('company_logo') }}" alt="شعار الشركة">
+            {% endif %}
+        </td>
+        <td class="header-company">
+            <div class="company-name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+            <div class="company-detail">
+                {% if settings.get('company_address') %}{{ settings.get('company_address') }}<br>{% endif %}
+                {% if settings.get('company_phone') %}هاتف: {{ settings.get('company_phone') }}<br>{% endif %}
+                {% if settings.get('company_email') %}{{ settings.get('company_email') }}<br>{% endif %}
+                {% if settings.get('company_tax_number') %}الرقم الضريبي: {{ settings.get('company_tax_number') }}{% endif %}
+            </div>
+        </td>
+        <td class="header-doc">
+            <div class="doc-number">{{ quotation.quote_number }}</div>
+            <div class="doc-type">عـرض سـعـر</div>
+            <div class="doc-meta">
+                تاريخ الإنشاء: {{ quotation.created_at.strftime('%Y-%m-%d') }}<br>
+                {% if quotation.valid_until %}صالح حتى: {{ quotation.valid_until }}<br>{% endif %}
+                {% set status_map = {'draft':'مسودة','sent':'مرسل','accepted':'مقبول','rejected':'مرفوض','expired':'منتهي'} %}
+                الحالة: {{ status_map.get(quotation.status.value, quotation.status.value) }}
+            </div>
+        </td>
+    </tr>
+</table>
+<hr class="header-divider">
+
+{# ── موضوع العرض ── #}
+<div class="info-box" style="margin-bottom:10pt;">
+    <span class="info-label">الموضوع</span><br>
+    <span style="font-size:12pt; font-weight:bold; color:#1e293b;">{{ quotation.title }}</span>
+</div>
+
+{# ── أطراف الوثيقة ── #}
+<table class="parties-table">
+    <tr>
+        <td class="party-box">
+            <span class="party-label">مُقدَّم إلى (العميل)</span>
+            <div class="party-name">{{ quotation.client.name if quotation.client else '—' }}</div>
+            {% if quotation.client and quotation.client.email %}
+            <div class="party-detail">{{ quotation.client.email }}</div>
+            {% endif %}
+            {% if quotation.client and quotation.client.phone %}
+            <div class="party-detail">{{ quotation.client.phone }}</div>
+            {% endif %}
+        </td>
+        <td class="party-box">
+            <span class="party-label">مُقدَّم من</span>
+            <div class="party-name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+            {% if settings.get('company_tax_number') %}
+            <div class="party-detail">الرقم الضريبي: {{ settings.get('company_tax_number') }}</div>
+            {% endif %}
+        </td>
+    </tr>
+</table>
+
+{# ── جدول البنود ── #}
+<table class="items-table">
+    <thead>
+        <tr>
+            <th style="width:14%">الإجمالي</th>
+            <th style="width:16%">سعر الوحدة</th>
+            <th style="width:10%">الكمية</th>
+            <th class="desc-col">الوصف</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in quotation.items %}
+        <tr>
+            <td>{{ "{:,.2f}".format(item.total) }}</td>
+            <td>{{ "{:,.2f}".format(item.unit_price) }}</td>
+            <td>{{ item.quantity }}</td>
+            <td class="desc-col">{{ item.description }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#94a3b8">لا توجد بنود</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{# ── الملخص المالي ── #}
+<table class="summary-wrapper">
+    <tr>
+        <td class="summary-spacer"></td>
+        <td>
+            <table class="summary-table">
+                <tr>
+                    <td class="sum-label">المجموع الفرعي</td>
+                    <td class="sum-value">{{ "{:,.2f}".format(quotation.subtotal) }} {{ currency }}</td>
+                </tr>
+                <tr>
+                    <td class="sum-label">الضريبة ({{ quotation.tax_rate }}%)</td>
+                    <td class="sum-value">{{ "{:,.2f}".format(quotation.tax_amount) }} {{ currency }}</td>
+                </tr>
+                <tr>
+                    <td class="sum-label">الخصم</td>
+                    <td class="sum-value">{{ "{:,.2f}".format(quotation.discount) }} {{ currency }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td>الإجمالي</td>
+                    <td>{{ "{:,.2f}".format(quotation.total) }} {{ currency }}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+{# ── الملاحظات ── #}
+{% if quotation.notes %}
+<div class="notes-section">
+    <div class="notes-title">ملاحظات:</div>
+    {{ quotation.notes }}
+</div>
+{% endif %}
+
+{# ── التوقيعات ── #}
+{% if show_signatures %}
+<table class="signatures-table">
+    <tr>
+        <td class="sig-box">
+            <span class="sig-title">توقيع العميل وختمه<br>(قبول العرض)</span>
+            <div class="sig-line">
+                <div class="sig-name">{{ quotation.client.name if quotation.client else '—' }}</div>
+            </div>
+        </td>
+        <td class="sig-box">
+            <span class="sig-title">توقيع مُقدِّم العرض وختمه</span>
+            <div class="sig-line">
+                <div class="sig-name">{{ settings.get('company_name', '') }}</div>
+                <div class="sig-job">{{ settings.get('pdf_signatory_title', 'المدير العام') }}</div>
+            </div>
+        </td>
+    </tr>
+</table>
+{% endif %}
+
+{# ── التذييل ── #}
+{% set footer = settings.get('pdf_footer_text','') or ([settings.get('company_name',''), settings.get('company_phone',''), settings.get('company_email','')] | select | join('  |  ')) %}
+{% if footer %}
+<hr class="footer-divider">
+<div class="footer-text">{{ footer }}</div>
+{% endif %}
+
+</body>
+</html>

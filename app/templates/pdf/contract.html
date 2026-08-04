@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+{# ================================================================
+   قالب عقد PDF
+   يمكن تعديل هذا الملف مباشرة لتغيير تخطيط العقد
+   المتغيرات المتاحة: contract, settings, primary_color, currency, fonts_path, custom_css, watermark, show_signatures
+   ================================================================ #}
+<html dir="rtl">
+<head>
+    {% include "pdf/_styles.html" %}
+    <title>عقد {{ contract.contract_number }}</title>
+</head>
+<body>
+
+{% if watermark %}<div class="watermark">{{ watermark }}</div>{% endif %}
+
+{# ── الترويسة ── #}
+<table class="header-table">
+    <tr>
+        <td class="header-logo">
+            {% if settings.get('company_logo') %}
+            <img src="{{ settings.get('company_logo') }}" alt="شعار الشركة">
+            {% endif %}
+        </td>
+        <td class="header-company">
+            <div class="company-name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+            <div class="company-detail">
+                {% if settings.get('company_address') %}{{ settings.get('company_address') }}<br>{% endif %}
+                {% if settings.get('company_phone') %}هاتف: {{ settings.get('company_phone') }}<br>{% endif %}
+                {% if settings.get('company_email') %}{{ settings.get('company_email') }}<br>{% endif %}
+                {% if settings.get('company_tax_number') %}الرقم الضريبي: {{ settings.get('company_tax_number') }}{% endif %}
+            </div>
+        </td>
+        <td class="header-doc">
+            <div class="doc-number">{{ contract.contract_number }}</div>
+            <div class="doc-type">عـقـد</div>
+            <div class="doc-meta">
+                تاريخ الإنشاء: {{ contract.created_at.strftime('%Y-%m-%d') }}<br>
+                البداية: {{ contract.start_date or '—' }}<br>
+                النهاية: {{ contract.end_date or '—' }}<br>
+                {% set status_map = {'draft':'مسودة','active':'نشط','expired':'منتهي','cancelled':'ملغي'} %}
+                الحالة: {{ status_map.get(contract.status.value, contract.status.value) }}
+            </div>
+        </td>
+    </tr>
+</table>
+<hr class="header-divider">
+
+{# ── عنوان العقد ── #}
+<div style="text-align:center; font-size:14pt; font-weight:bold; color:#1e293b;
+            border:0.5pt solid #e2e8f0; background:#f8fafc;
+            padding:9pt 14pt; margin-bottom:10pt;">
+    {{ contract.title }}
+</div>
+
+{# ── أطراف العقد ── #}
+<table class="parties-table">
+    <tr>
+        <td class="party-box">
+            <span class="party-label">الطرف الثاني (العميل)</span>
+            <div class="party-name">{{ contract.client.name if contract.client else '—' }}</div>
+            {% if contract.client and contract.client.phone %}
+            <div class="party-detail">{{ contract.client.phone }}</div>
+            {% endif %}
+            {% if contract.client and contract.client.email %}
+            <div class="party-detail">{{ contract.client.email }}</div>
+            {% endif %}
+        </td>
+        <td class="party-box">
+            <span class="party-label">الطرف الأول</span>
+            <div class="party-name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+            {% if settings.get('company_tax_number') %}
+            <div class="party-detail">الرقم الضريبي: {{ settings.get('company_tax_number') }}</div>
+            {% endif %}
+            {% if settings.get('company_phone') %}
+            <div class="party-detail">{{ settings.get('company_phone') }}</div>
+            {% endif %}
+        </td>
+    </tr>
+</table>
+
+{# ── قيمة العقد ── #}
+<div class="info-box">
+    <span class="info-label">قيمة العقد الإجمالية</span><br>
+    <span class="info-value">{{ "{:,.2f}".format(contract.amount) }} {{ currency }}</span>
+</div>
+
+{# ── الوصف ── #}
+{% if contract.description %}
+<div class="section-title">الوصف / نطاق العمل</div>
+<p style="font-size:10.5pt; color:#374151; line-height:1.8; margin:0 0 8pt 0;">
+    {{ contract.description }}
+</p>
+{% endif %}
+
+{# ── الملاحظات ── #}
+{% if contract.notes %}
+<div class="notes-section">
+    <div class="notes-title">ملاحظات:</div>
+    {{ contract.notes }}
+</div>
+{% endif %}
+
+{# ── التوقيعات ── #}
+{% if show_signatures %}
+<table class="signatures-table">
+    <tr>
+        <td class="sig-box">
+            <span class="sig-title">توقيع الطرف الثاني وختمه<br>(العميل)</span>
+            <div class="sig-line">
+                <div class="sig-name">{{ contract.client.name if contract.client else '—' }}</div>
+            </div>
+        </td>
+        <td class="sig-box">
+            <span class="sig-title">توقيع الطرف الأول وختمه</span>
+            <div class="sig-line">
+                <div class="sig-name">{{ settings.get('company_name', '') }}</div>
+                <div class="sig-job">{{ settings.get('pdf_signatory_title', 'المدير العام') }}</div>
+            </div>
+        </td>
+    </tr>
+</table>
+{% endif %}
+
+{# ── التذييل ── #}
+{% set footer = settings.get('pdf_footer_text','') or ([settings.get('company_name',''), settings.get('company_phone',''), settings.get('company_email','')] | select | join('  |  ')) %}
+{% if footer %}
+<hr class="footer-divider">
+<div class="footer-text">{{ footer }}</div>
+{% endif %}
+
+</body>
+</html>

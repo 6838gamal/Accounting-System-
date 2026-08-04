@@ -101,7 +101,7 @@ async def invoice_pdf(request: Request, invoice_id: int, db: Session = Depends(g
     if not invoice:
         raise HTTPException(status_code=404)
     company_settings = SettingsService(db).get_all()
-    from app.services.pdf_service import generate_invoice_pdf
+    from app.services.html_pdf_service import generate_invoice_pdf
     pdf_bytes = generate_invoice_pdf(invoice, company_settings)
     return Response(
         content=pdf_bytes,

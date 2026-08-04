@@ -1,0 +1,343 @@
+{# ================================================================
+   قالب PDF المشترك — الخطوط والألوان والمكونات
+   يمكن تخصيص أي جزء منه عبر إعدادات → محرر قالب PDF
+   ================================================================ #}
+<meta charset="utf-8">
+<style>
+/* ══════════════════════════════════════════════
+   1. الخطوط — Amiri العربي
+   ══════════════════════════════════════════════ */
+@font-face {
+    font-family: Amiri;
+    src: url("file://{{ fonts_path }}/Amiri-Regular.ttf");
+}
+@font-face {
+    font-family: Amiri;
+    font-weight: bold;
+    src: url("file://{{ fonts_path }}/Amiri-Bold.ttf");
+}
+
+/* ══════════════════════════════════════════════
+   2. المتغيرات — غيّر اللون الرئيسي والخطوط هنا
+   ══════════════════════════════════════════════ */
+/* primary_color  = {{ primary_color }}  */
+/* font_family    = Amiri                */
+/* page_size      = A4                  */
+
+/* ══════════════════════════════════════════════
+   3. الصفحة والنص الأساسي
+   ══════════════════════════════════════════════ */
+@page {
+    size: A4;
+    margin: 1.6cm 1.8cm 1.6cm 1.8cm;
+}
+
+body {
+    font-family: Amiri, serif;
+    direction: rtl;
+    font-size: 11pt;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════
+   4. الترويسة
+   ══════════════════════════════════════════════ */
+.header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 6pt;
+}
+.header-table td {
+    border: none;
+    padding: 0;
+    vertical-align: top;
+}
+.header-logo {
+    text-align: right;
+    width: 22%;
+}
+.header-logo img {
+    max-width: 100%;
+    max-height: 60pt;
+}
+.header-company {
+    text-align: right;
+    width: 45%;
+    padding-right: 8pt;
+}
+.header-company .company-name {
+    font-size: 14pt;
+    font-weight: bold;
+    color: {{ primary_color }};
+}
+.header-company .company-detail {
+    font-size: 9pt;
+    color: #64748b;
+    line-height: 1.5;
+}
+.header-doc {
+    text-align: left;
+    width: 33%;
+}
+.header-doc .doc-number {
+    font-size: 15pt;
+    font-weight: bold;
+    color: {{ primary_color }};
+}
+.header-doc .doc-type {
+    font-size: 9pt;
+    color: #64748b;
+}
+.header-doc .doc-meta {
+    font-size: 9pt;
+    color: #475569;
+    margin-top: 3pt;
+    line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════
+   5. خط الفصل تحت الترويسة
+   ══════════════════════════════════════════════ */
+.header-divider {
+    border: none;
+    border-top: 2.5pt solid {{ primary_color }};
+    margin: 6pt 0 10pt 0;
+}
+
+/* ══════════════════════════════════════════════
+   6. أطراف الوثيقة
+   ══════════════════════════════════════════════ */
+.parties-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 6pt 0;
+    margin-bottom: 10pt;
+}
+.party-box {
+    width: 50%;
+    border: 0.5pt solid #e2e8f0;
+    background: #f8fafc;
+    padding: 8pt 10pt;
+    vertical-align: top;
+}
+.party-label {
+    font-size: 8pt;
+    color: #64748b;
+    display: block;
+    margin-bottom: 2pt;
+}
+.party-name {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #1e293b;
+}
+.party-detail {
+    font-size: 8.5pt;
+    color: #475569;
+    margin-top: 2pt;
+}
+
+/* ══════════════════════════════════════════════
+   7. بطاقة المعلومات (مثل: قيمة العقد، الحالة)
+   ══════════════════════════════════════════════ */
+.info-box {
+    border-right: 3.5pt solid {{ primary_color }};
+    background: #f8fafc;
+    padding: 6pt 10pt;
+    margin-bottom: 8pt;
+    font-size: 10.5pt;
+}
+.info-box .info-label {
+    color: #64748b;
+    font-size: 8.5pt;
+}
+.info-box .info-value {
+    font-weight: bold;
+    color: {{ primary_color }};
+    font-size: 14pt;
+}
+
+/* ══════════════════════════════════════════════
+   8. جدول البنود
+   ══════════════════════════════════════════════ */
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8pt;
+    font-size: 10pt;
+}
+.items-table thead th {
+    background: {{ primary_color }};
+    color: white;
+    font-weight: bold;
+    padding: 7pt 8pt;
+    text-align: center;
+    border: none;
+    font-size: 10pt;
+}
+.items-table thead th.desc-col {
+    text-align: right;
+}
+.items-table tbody td {
+    padding: 6pt 8pt;
+    border-bottom: 0.5pt solid #e2e8f0;
+    text-align: center;
+    vertical-align: middle;
+}
+.items-table tbody td.desc-col {
+    text-align: right;
+}
+.items-table tbody tr:nth-child(even) td {
+    background: #f8fafc;
+}
+
+/* ══════════════════════════════════════════════
+   9. ملخص الإجماليات
+   ══════════════════════════════════════════════ */
+.summary-wrapper {
+    width: 100%;
+    margin-bottom: 8pt;
+}
+.summary-spacer {
+    width: 55%;
+}
+.summary-table {
+    width: 45%;
+    border-collapse: collapse;
+    font-size: 10pt;
+}
+.summary-table td {
+    padding: 5pt 8pt;
+    border-bottom: 0.5pt solid #e2e8f0;
+}
+.summary-table .sum-label {
+    text-align: right;
+    color: #64748b;
+    width: 55%;
+}
+.summary-table .sum-value {
+    text-align: left;
+    font-weight: bold;
+    width: 45%;
+}
+.summary-table .total-row td {
+    background: {{ primary_light }};
+    border-top: 1.5pt solid {{ primary_color }};
+    border-bottom: none;
+    font-size: 12pt;
+    font-weight: bold;
+    color: {{ primary_color }};
+    padding: 7pt 8pt;
+}
+
+/* ══════════════════════════════════════════════
+   10. الملاحظات
+   ══════════════════════════════════════════════ */
+.notes-section {
+    background: #f8fafc;
+    border: 0.5pt solid #e2e8f0;
+    padding: 8pt 10pt;
+    margin-bottom: 8pt;
+    font-size: 10pt;
+}
+.notes-title {
+    font-weight: bold;
+    color: #374151;
+    margin-bottom: 4pt;
+    font-size: 10pt;
+}
+
+/* ══════════════════════════════════════════════
+   11. عنوان القسم (وصف، شروط)
+   ══════════════════════════════════════════════ */
+.section-title {
+    font-weight: bold;
+    font-size: 10.5pt;
+    color: #374151;
+    border-bottom: 0.5pt solid #e2e8f0;
+    padding-bottom: 3pt;
+    margin-bottom: 5pt;
+    margin-top: 8pt;
+}
+
+/* ══════════════════════════════════════════════
+   12. التوقيعات
+   ══════════════════════════════════════════════ */
+.signatures-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 10pt 0;
+    margin-top: 20pt;
+}
+.sig-box {
+    width: 50%;
+    border: 1pt solid #e2e8f0;
+    background: #f8fafc;
+    padding: 10pt 12pt 8pt 12pt;
+    text-align: center;
+    vertical-align: top;
+    border-bottom: 3pt solid {{ primary_color }};
+}
+.sig-title {
+    font-weight: bold;
+    font-size: 10pt;
+    color: #374151;
+    margin-bottom: 30pt;
+    display: block;
+}
+.sig-line {
+    border-top: 1pt solid #94a3b8;
+    padding-top: 4pt;
+    font-size: 9pt;
+    color: #64748b;
+    margin-top: 0;
+}
+.sig-name {
+    font-size: 9.5pt;
+    color: #374151;
+    font-weight: bold;
+}
+.sig-job {
+    font-size: 8.5pt;
+    color: #64748b;
+}
+
+/* ══════════════════════════════════════════════
+   13. التذييل
+   ══════════════════════════════════════════════ */
+.footer-divider {
+    border: none;
+    border-top: 0.5pt solid #e2e8f0;
+    margin: 8pt 0 4pt 0;
+}
+.footer-text {
+    text-align: center;
+    font-size: 8.5pt;
+    color: #94a3b8;
+}
+
+/* ══════════════════════════════════════════════
+   14. علامة مائية (اختيارية)
+   ══════════════════════════════════════════════ */
+{% if watermark %}
+.watermark {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-35deg);
+    font-size: 52pt;
+    font-weight: bold;
+    color: rgba(0,0,0,0.06);
+    z-index: -1;
+    white-space: nowrap;
+}
+{% endif %}
+
+/* ══════════════════════════════════════════════
+   15. CSS مخصص من الإعدادات — يُطبَّق فوق كل ما سبق
+   ══════════════════════════════════════════════ */
+{{ custom_css }}
+</style>
