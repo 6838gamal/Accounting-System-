@@ -2,19 +2,73 @@
  * نظام المحاسبة - JavaScript الرئيسي
  */
 
-// تبديل الشريط الجانبي
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
+// ===== القائمة الجانبية =====
+
+function getSidebarOverlay() {
+    let overlay = document.getElementById('sidebar-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.className = 'sidebar-overlay';
+        overlay.addEventListener('click', closeSidebar);
+        document.body.appendChild(overlay);
+    }
+    return overlay;
 }
 
-// إغلاق الشريط الجانبي عند النقر خارجه
-document.addEventListener('click', function(e) {
+function openSidebar() {
     const sidebar = document.getElementById('sidebar');
-    const toggle = document.querySelector('.sidebar-toggle');
-    if (sidebar && toggle && window.innerWidth <= 992) {
-        if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-            sidebar.classList.remove('open');
-        }
+    if (!sidebar) return;
+    sidebar.classList.add('open');
+    getSidebarOverlay().classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    sidebar.classList.remove('open');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    if (sidebar.classList.contains('open')) {
+        closeSidebar();
+    } else {
+        openSidebar();
+    }
+}
+
+// إغلاق القائمة عند النقر على رابط داخلها (موبايل فقط)
+document.addEventListener('DOMContentLoaded', function () {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.querySelectorAll('.nav-link').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 992) {
+                    closeSidebar();
+                }
+            });
+        });
+    }
+
+    // إغلاق القائمة عند ضغط Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSidebar();
+    });
+
+    // لف الجداول داخل بطاقات بحاوية قابلة للتمرير (للشاشات الصغيرة)
+    // يُطبَّق عبر CSS عبر overflow-x على .card-body مباشرة
+});
+
+// إعادة ضبط القائمة عند تكبير الشاشة
+window.addEventListener('resize', function () {
+    if (window.innerWidth > 992) {
+        closeSidebar();
     }
 });
 
@@ -66,20 +120,20 @@ function renderItems() {
                     onchange="updateItem(${i}, 'description', this.value)"
                     placeholder="وصف البند" required>
             </td>
-            <td style="width:100px">
+            <td style="width:90px;min-width:80px">
                 <input type="number" class="form-control form-control-sm"
                     value="${item.quantity}" min="0.01" step="0.01"
                     oninput="updateItem(${i}, 'quantity', this.value)">
             </td>
-            <td style="width:140px">
+            <td style="width:130px;min-width:110px">
                 <input type="number" class="form-control form-control-sm"
                     value="${item.unit_price}" min="0" step="0.01"
                     oninput="updateItem(${i}, 'unit_price', this.value)">
             </td>
-            <td style="width:130px" class="text-end fw-semibold">
+            <td style="width:120px;min-width:100px" class="text-end fw-semibold">
                 ${formatNumber((item.quantity || 0) * (item.unit_price || 0))}
             </td>
-            <td style="width:50px" class="text-center">
+            <td style="width:46px;min-width:40px" class="text-center">
                 <button type="button" class="btn btn-sm btn-outline-danger p-1"
                     onclick="removeItem(${i})">
                     <i class="bi bi-trash"></i>
@@ -102,8 +156,8 @@ function calculateTotals() {
 
     const el = (id) => document.getElementById(id);
     if (el('subtotal-display')) el('subtotal-display').textContent = formatNumber(subtotal);
-    if (el('tax-display')) el('tax-display').textContent = formatNumber(taxAmount);
-    if (el('total-display')) el('total-display').textContent = formatNumber(total);
+    if (el('tax-display'))      el('tax-display').textContent      = formatNumber(taxAmount);
+    if (el('total-display'))    el('total-display').textContent    = formatNumber(total);
 }
 
 function updateItemsJson() {
