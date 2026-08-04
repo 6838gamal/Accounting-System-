@@ -19,8 +19,15 @@ class Settings(BaseSettings):
     SESSION_SECRET: str = ""  # يُقرأ من متغير البيئة SESSION_SECRET إن وُجد
     SESSION_MAX_AGE: int = 60 * 60 * 8  # 8 ساعات
 
-    # قاعدة البيانات (SQLite — مُعرَّف باسم مختلف لتجنب تعارض DATABASE_URL في البيئة)
+    # قاعدة البيانات
+    # DATABASE_URL_OVERRIDE يُستخدم في Docker لتحديد مسار قاعدة البيانات
+    # SQLITE_URL يُستخدم في Replit لتجنب تعارض DATABASE_URL في البيئة
+    DATABASE_URL_OVERRIDE: str = ""
     SQLITE_URL: str = f"sqlite:///{BASE_DIR}/accounting.db"
+
+    @property
+    def effective_db_url(self) -> str:
+        return self.DATABASE_URL_OVERRIDE or self.SQLITE_URL
 
     # الرفع
     UPLOAD_DIR: str = str(BASE_DIR / "uploads")

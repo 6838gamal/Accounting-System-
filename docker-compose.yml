@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    container_name: accounting_app
+    ports:
+      - "8000:8000"
+    volumes:
+      # استمرارية قاعدة البيانات والمرفقات بين إعادات التشغيل
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-in-production}
+      - SESSION_SECRET=${SESSION_SECRET:-change-this-session-secret}
+      - DATABASE_URL_OVERRIDE=sqlite:////app/data/accounting.db
+      - DEBUG=${DEBUG:-false}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/auth/login')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

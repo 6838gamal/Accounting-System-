@@ -6,9 +6,10 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from app.config import settings
 
 
+_db_url = settings.effective_db_url
 engine = create_engine(
-    settings.SQLITE_URL,
-    connect_args={"check_same_thread": False},
+    _db_url,
+    connect_args={"check_same_thread": False} if _db_url.startswith("sqlite") else {},
     echo=settings.DEBUG,
 )
 
