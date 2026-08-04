@@ -18,6 +18,11 @@ DEFAULT_SETTINGS = {
     "quote_prefix": ("QT", "بادئة رقم عرض السعر"),
     "contract_prefix": ("CNT", "بادئة رقم العقد"),
     "invoice_notes": ("", "ملاحظات افتراضية للفواتير"),
+    # هوية المؤسسة في الوثائق
+    "company_logo": ("", "شعار الشركة (base64)"),
+    "pdf_primary_color": ("#2563eb", "لون العلامة التجارية في الوثائق"),
+    "pdf_footer_text": ("", "نص التذييل في الوثائق"),
+    "pdf_signatory_title": ("المدير العام", "لقب الموقِّع الأول"),
 }
 
 

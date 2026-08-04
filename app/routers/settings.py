@@ -1,7 +1,8 @@
 """
 مسارات الإعدادات
 """
-from fastapi import APIRouter, Request, Depends, Form
+import base64
+from fastapi import APIRouter, Request, Depends, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -12,6 +13,10 @@ from app.services.settings_service import SettingsService, DEFAULT_SETTINGS
 router = APIRouter(prefix="/settings", tags=["settings"])
 templates = Jinja2Templates(directory="app/templates")
 
+# الحجم الأقصى للشعار 2MB
+_MAX_LOGO_SIZE = 2 * 1024 * 1024
+_ALLOWED_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/svg+xml", "image/webp"}
+
 
 @router.get("", response_class=HTMLResponse)
 async def settings_page(request: Request, db: Session = Depends(get_db)):
@@ -19,19 +24,46 @@ async def settings_page(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url="/auth/login", status_code=302)
     settings = SettingsService(db).get_all()
     return templates.TemplateResponse("settings/index.html", {
-        "request": request, "settings": settings, "saved": False
+        "request": request, "settings": settings, "saved": False, "error": None
     })
 
 
 @router.post("")
-async def save_settings(request: Request, db: Session = Depends(get_db)):
+async def save_settings(
+    request: Request,
+    db: Session = Depends(get_db),
+    company_logo_file: Optional[UploadFile] = File(None),
+    remove_logo: Optional[str] = Form(None),
+):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
+
     form_data = await request.form()
     service = SettingsService(db)
-    data = {k: str(v) for k, v in form_data.items() if k in DEFAULT_SETTINGS}
+    error = None
+
+    # حفظ الحقول النصية العادية
+    text_keys = {k for k in DEFAULT_SETTINGS if k != "company_logo"}
+    data = {k: str(v) for k, v in form_data.items() if k in text_keys}
     service.save_all(data)
+
+    # معالجة الشعار
+    if remove_logo == "1":
+        service.set("company_logo", "")
+    elif company_logo_file and company_logo_file.filename:
+        if company_logo_file.content_type not in _ALLOWED_TYPES:
+            error = "نوع الملف غير مدعوم. يُرجى رفع صورة PNG أو JPG أو SVG."
+        else:
+            content = await company_logo_file.read()
+            if len(content) > _MAX_LOGO_SIZE:
+                error = "حجم الشعار يتجاوز الحد المسموح (2MB)."
+            else:
+                mime = company_logo_file.content_type
+                b64 = base64.b64encode(content).decode("utf-8")
+                service.set("company_logo", f"data:{mime};base64,{b64}")
+
     settings = service.get_all()
     return templates.TemplateResponse("settings/index.html", {
-        "request": request, "settings": settings, "saved": True
+        "request": request, "settings": settings,
+        "saved": error is None, "error": error
     })
