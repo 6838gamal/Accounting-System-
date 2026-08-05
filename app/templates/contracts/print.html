@@ -352,14 +352,12 @@
                 <div class="sig-placeholder">
                     <img id="docSigImg" style="display:none;">
                 </div>
-                <div class="sig-line">{{ settings.get('company_name', '') }}</div>
             </div>
 
             <!-- يسار: توقيع العميل -->
             <div class="sig-box">
                 <div class="sig-label">توقيع العميل (الطرف الثاني)</div>
                 <div class="sig-placeholder">مكان التوقيع</div>
-                <div class="sig-line">{{ contract.client.name if contract.client else '' }}</div>
             </div>
         </div>
 
@@ -368,7 +366,6 @@
             <div class="stamp-box">
                 <div class="stamp-label">ختم المؤسسة</div>
                 <img id="docStampImg" class="stamp-img" style="display:none;">
-                <div class="stamp-sub">{{ settings.get('company_name', '') }}</div>
             </div>
         </div>
     </div>
