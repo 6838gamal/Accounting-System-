@@ -11,6 +11,11 @@
         </span>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        {% if quotation.status.value not in ['accepted', 'rejected'] %}
+        <a href="/quotations/{{ quotation.id }}/edit" class="btn btn-outline-warning">
+            <i class="bi bi-pencil me-1"></i>تعديل
+        </a>
+        {% endif %}
         <a href="/quotations/{{ quotation.id }}/print" target="_blank" class="btn btn-primary">
             <i class="bi bi-printer me-1"></i>طباعة
         </a>

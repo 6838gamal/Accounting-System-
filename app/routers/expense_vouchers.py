@@ -90,26 +90,30 @@ async def create_expense_voucher(
 ):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
-    voucher = ExpenseVoucher(
-        voucher_number=voucher_number,
-        voucher_date=date.fromisoformat(voucher_date),
-        payee=payee,
-        amount=Decimal(str(amount)),
-        method=VoucherPaymentMethod(method),
-        category=category or None,
-        description=description or None,
-        reference=reference or None,
-        notes=notes or None,
-        created_by=request.session["user_id"],
-    )
-    db.add(voucher)
-    db.commit()
-    db.refresh(voucher)
-    ActivityService(db).log(
-        request.session["user_id"], "create", "expense_vouchers", voucher.id,
-        f"سند مصروف: {voucher_number} - {payee}"
-    )
-    return RedirectResponse(url=f"/expense-vouchers/{voucher.id}", status_code=302)
+    try:
+        voucher = ExpenseVoucher(
+            voucher_number=voucher_number,
+            voucher_date=date.fromisoformat(voucher_date),
+            payee=payee,
+            amount=Decimal(str(amount)),
+            method=VoucherPaymentMethod(method),
+            category=category or None,
+            description=description or None,
+            reference=reference or None,
+            notes=notes or None,
+            created_by=request.session["user_id"],
+        )
+        db.add(voucher)
+        db.commit()
+        db.refresh(voucher)
+        ActivityService(db).log(
+            request.session["user_id"], "create", "expense_vouchers", voucher.id,
+            f"سند مصروف: {voucher_number} - {payee}"
+        )
+        return RedirectResponse(url=f"/expense-vouchers/{voucher.id}", status_code=302)
+    except Exception:
+        db.rollback()
+        return RedirectResponse(url="/expense-vouchers?error=حدث+خطأ+أثناء+حفظ+السند،+يرجى+التحقق+من+البيانات", status_code=302)
 
 
 @router.get("/{voucher_id}", response_class=HTMLResponse)

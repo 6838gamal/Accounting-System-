@@ -74,21 +74,35 @@ async def create_invoice(
             items = items[:100]
     except (json.JSONDecodeError, ValueError):
         items = []
-    service = InvoiceService(db)
-    invoice = service.create(
-        {
-            "client_id": client_id,
-            "issue_date": date.fromisoformat(issue_date),
-            "due_date": date.fromisoformat(due_date) if due_date else None,
-            "tax_rate": Decimal(str(tax_rate)),
-            "discount": Decimal(str(discount)),
-            "notes": notes or None,
-        },
-        items_data=items,
-        created_by=request.session["user_id"],
-    )
-    ActivityService(db).log(request.session["user_id"], "create", "invoices", invoice.id, f"إنشاء فاتورة: {invoice.invoice_number}")
-    return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
+    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    try:
+        service = InvoiceService(db)
+        invoice = service.create(
+            {
+                "client_id": client_id,
+                "issue_date": date.fromisoformat(issue_date),
+                "due_date": date.fromisoformat(due_date) if due_date else None,
+                "tax_rate": Decimal(str(tax_rate)),
+                "discount": Decimal(str(discount)),
+                "notes": notes or None,
+            },
+            items_data=items,
+            created_by=request.session["user_id"],
+        )
+        ActivityService(db).log(request.session["user_id"], "create", "invoices", invoice.id, f"إنشاء فاتورة: {invoice.invoice_number}")
+        return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
+    except Exception:
+        db.rollback()
+        s = SettingsService(db).get_all()
+        from datetime import date as _date
+        return templates.TemplateResponse("invoices/form.html", {
+            "request": request, "invoice": None, "clients": clients,
+            "default_tax_rate": s.get("default_tax_rate", "15"),
+            "currency": s.get("currency", "SAR"),
+            "default_notes": s.get("invoice_notes", ""),
+            "error": "حدث خطأ أثناء حفظ الفاتورة. يرجى التحقق من البيانات.",
+            "today": _date.today(),
+        })
 
 
 @router.get("/{invoice_id}/edit", response_class=HTMLResponse)
@@ -136,21 +150,34 @@ async def update_invoice(
             items = items[:100]
     except (json.JSONDecodeError, ValueError):
         items = []
-    service = InvoiceService(db)
-    invoice = service.update(
-        invoice_id,
-        {
-            "client_id": client_id,
-            "issue_date": date.fromisoformat(issue_date),
-            "due_date": date.fromisoformat(due_date) if due_date else None,
-            "tax_rate": Decimal(str(tax_rate)),
-            "discount": Decimal(str(discount)),
-            "notes": notes or None,
-        },
-        items_data=items,
-    )
-    ActivityService(db).log(request.session["user_id"], "update", "invoices", invoice.id, f"تعديل فاتورة: {invoice.invoice_number}")
-    return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
+    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    try:
+        service = InvoiceService(db)
+        invoice = service.update(
+            invoice_id,
+            {
+                "client_id": client_id,
+                "issue_date": date.fromisoformat(issue_date),
+                "due_date": date.fromisoformat(due_date) if due_date else None,
+                "tax_rate": Decimal(str(tax_rate)),
+                "discount": Decimal(str(discount)),
+                "notes": notes or None,
+            },
+            items_data=items,
+        )
+        ActivityService(db).log(request.session["user_id"], "update", "invoices", invoice.id, f"تعديل فاتورة: {invoice.invoice_number}")
+        return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
+    except Exception:
+        db.rollback()
+        s = SettingsService(db).get_all()
+        return templates.TemplateResponse("invoices/form.html", {
+            "request": request, "invoice": existing, "clients": clients,
+            "default_tax_rate": s.get("default_tax_rate", "15"),
+            "currency": s.get("currency", "SAR"),
+            "default_notes": s.get("invoice_notes", ""),
+            "error": "حدث خطأ أثناء حفظ التعديلات. يرجى التحقق من البيانات.",
+            "today": existing.issue_date,
+        })
 
 
 @router.get("/{invoice_id}", response_class=HTMLResponse)

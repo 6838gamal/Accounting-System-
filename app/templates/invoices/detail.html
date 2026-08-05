@@ -160,6 +160,7 @@
 
 {% block extra_js %}
 <script>
-document.querySelector('input[name="payment_date"]').value = new Date().toISOString().split('T')[0];
+const pdInput = document.querySelector('input[name="payment_date"]');
+if (pdInput) pdInput.value = new Date().toISOString().split('T')[0];
 </script>
 {% endblock %}

@@ -69,26 +69,37 @@ async def create_quotation(
 ):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
-    items = json.loads(items_json)
-    subtotal, tax, total = _calc(items, tax_rate, discount)
-    q = Quotation(
-        quote_number=_gen_number(db), client_id=client_id, title=title,
-        tax_rate=Decimal(str(tax_rate)), discount=Decimal(str(discount)),
-        subtotal=subtotal, tax_amount=tax, total=total,
-        valid_until=date.fromisoformat(valid_until) if valid_until else None,
-        notes=notes or None, created_by=request.session["user_id"],
-    )
-    db.add(q)
-    db.flush()
-    for i, item in enumerate(items):
-        qty = Decimal(str(item.get("quantity", 1)))
-        price = Decimal(str(item.get("unit_price", 0)))
-        db.add(QuotationItem(quotation_id=q.id, description=item.get("description", ""),
-                              quantity=qty, unit_price=price, total=qty * price, sort_order=i))
-    db.commit()
-    db.refresh(q)
-    ActivityService(db).log(request.session["user_id"], "create", "quotations", q.id, f"إنشاء عرض: {q.quote_number}")
-    return RedirectResponse(url=f"/quotations/{q.id}", status_code=302)
+    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    try:
+        items = json.loads(items_json)
+        subtotal, tax, total = _calc(items, tax_rate, discount)
+        q = Quotation(
+            quote_number=_gen_number(db), client_id=client_id, title=title,
+            tax_rate=Decimal(str(tax_rate)), discount=Decimal(str(discount)),
+            subtotal=subtotal, tax_amount=tax, total=total,
+            valid_until=date.fromisoformat(valid_until) if valid_until else None,
+            notes=notes or None, created_by=request.session["user_id"],
+        )
+        db.add(q)
+        db.flush()
+        for i, item in enumerate(items):
+            qty = Decimal(str(item.get("quantity", 1)))
+            price = Decimal(str(item.get("unit_price", 0)))
+            db.add(QuotationItem(quotation_id=q.id, description=item.get("description", ""),
+                                  quantity=qty, unit_price=price, total=qty * price, sort_order=i))
+        db.commit()
+        db.refresh(q)
+        ActivityService(db).log(request.session["user_id"], "create", "quotations", q.id, f"إنشاء عرض: {q.quote_number}")
+        return RedirectResponse(url=f"/quotations/{q.id}", status_code=302)
+    except Exception:
+        db.rollback()
+        s = SettingsService(db).get_all()
+        return templates.TemplateResponse("quotations/form.html", {
+            "request": request, "quotation": None, "clients": clients,
+            "default_tax_rate": s.get("default_tax_rate", "15"),
+            "currency": s.get("currency", "SAR"),
+            "error": "حدث خطأ أثناء إنشاء العرض. يرجى التحقق من البيانات.",
+        })
 
 
 @router.get("/{qid}", response_class=HTMLResponse)

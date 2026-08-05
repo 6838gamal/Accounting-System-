@@ -88,26 +88,30 @@ async def create_receipt_voucher(
 ):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
-    voucher = ReceiptVoucher(
-        voucher_number=voucher_number,
-        voucher_date=date.fromisoformat(voucher_date),
-        received_from=received_from,
-        amount=Decimal(str(amount)),
-        method=VoucherPaymentMethod(method),
-        client_id=client_id if client_id else None,
-        description=description or None,
-        reference=reference or None,
-        notes=notes or None,
-        created_by=request.session["user_id"],
-    )
-    db.add(voucher)
-    db.commit()
-    db.refresh(voucher)
-    ActivityService(db).log(
-        request.session["user_id"], "create", "receipt_vouchers", voucher.id,
-        f"سند قبض: {voucher_number} - {received_from}"
-    )
-    return RedirectResponse(url=f"/receipt-vouchers/{voucher.id}", status_code=302)
+    try:
+        voucher = ReceiptVoucher(
+            voucher_number=voucher_number,
+            voucher_date=date.fromisoformat(voucher_date),
+            received_from=received_from,
+            amount=Decimal(str(amount)),
+            method=VoucherPaymentMethod(method),
+            client_id=client_id if client_id else None,
+            description=description or None,
+            reference=reference or None,
+            notes=notes or None,
+            created_by=request.session["user_id"],
+        )
+        db.add(voucher)
+        db.commit()
+        db.refresh(voucher)
+        ActivityService(db).log(
+            request.session["user_id"], "create", "receipt_vouchers", voucher.id,
+            f"سند قبض: {voucher_number} - {received_from}"
+        )
+        return RedirectResponse(url=f"/receipt-vouchers/{voucher.id}", status_code=302)
+    except Exception:
+        db.rollback()
+        return RedirectResponse(url="/receipt-vouchers?error=حدث+خطأ+أثناء+حفظ+السند،+يرجى+التحقق+من+البيانات", status_code=302)
 
 
 @router.get("/{voucher_id}", response_class=HTMLResponse)

@@ -61,21 +61,29 @@ async def create_contract(
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     from datetime import date
-    contract = Contract(
-        contract_number=_generate_number(db),
-        client_id=client_id, title=title,
-        description=description or None,
-        amount=Decimal(str(amount)),
-        start_date=date.fromisoformat(start_date) if start_date else None,
-        end_date=date.fromisoformat(end_date) if end_date else None,
-        notes=notes or None,
-        created_by=request.session["user_id"],
-    )
-    db.add(contract)
-    db.commit()
-    db.refresh(contract)
-    ActivityService(db).log(request.session["user_id"], "create", "contracts", contract.id, f"إنشاء عقد: {title}")
-    return RedirectResponse(url=f"/contracts/{contract.id}", status_code=302)
+    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    try:
+        contract = Contract(
+            contract_number=_generate_number(db),
+            client_id=client_id, title=title,
+            description=description or None,
+            amount=Decimal(str(amount)),
+            start_date=date.fromisoformat(start_date) if start_date else None,
+            end_date=date.fromisoformat(end_date) if end_date else None,
+            notes=notes or None,
+            created_by=request.session["user_id"],
+        )
+        db.add(contract)
+        db.commit()
+        db.refresh(contract)
+        ActivityService(db).log(request.session["user_id"], "create", "contracts", contract.id, f"إنشاء عقد: {title}")
+        return RedirectResponse(url=f"/contracts/{contract.id}", status_code=302)
+    except Exception:
+        db.rollback()
+        return templates.TemplateResponse("contracts/form.html", {
+            "request": request, "contract": None, "clients": clients,
+            "error": "حدث خطأ أثناء إنشاء العقد. يرجى التحقق من البيانات.",
+        })
 
 
 @router.get("/{contract_id}", response_class=HTMLResponse)
@@ -115,17 +123,25 @@ async def update_contract(
     contract = db.query(Contract).filter(Contract.id == contract_id).first()
     if not contract:
         raise HTTPException(status_code=404)
-    contract.client_id = client_id
-    contract.title = title
-    contract.description = description or None
-    contract.amount = Decimal(str(amount))
-    contract.start_date = date.fromisoformat(start_date) if start_date else None
-    contract.end_date = date.fromisoformat(end_date) if end_date else None
-    contract.status = status
-    contract.notes = notes or None
-    db.commit()
-    ActivityService(db).log(request.session["user_id"], "update", "contracts", contract_id, f"تعديل عقد: {title}")
-    return RedirectResponse(url=f"/contracts/{contract_id}", status_code=302)
+    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    try:
+        contract.client_id = client_id
+        contract.title = title
+        contract.description = description or None
+        contract.amount = Decimal(str(amount))
+        contract.start_date = date.fromisoformat(start_date) if start_date else None
+        contract.end_date = date.fromisoformat(end_date) if end_date else None
+        contract.status = ContractStatus(status)
+        contract.notes = notes or None
+        db.commit()
+        ActivityService(db).log(request.session["user_id"], "update", "contracts", contract_id, f"تعديل عقد: {title}")
+        return RedirectResponse(url=f"/contracts/{contract_id}", status_code=302)
+    except Exception:
+        db.rollback()
+        return templates.TemplateResponse("contracts/form.html", {
+            "request": request, "contract": contract, "clients": clients,
+            "error": "حدث خطأ أثناء حفظ التعديلات. يرجى التحقق من البيانات.",
+        })
 
 
 @router.get("/{contract_id}/print", response_class=HTMLResponse)
