@@ -227,19 +227,26 @@
             border-top: 1px dashed #cbd5e1;
         }
 
-        /* في المحرر: توقيع الطرف الأول فقط — محاذاة يمين */
+        /* توقيع الطرف الأول يمين، توقيع العميل يسار */
         .signatures-row {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            gap: 16px;
         }
 
         .sig-block {
-            width: 280px;
+            flex: 0 0 45%;
+            width: 45%;
             text-align: center;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 14px 16px 12px;
             background: #f8fafc;
+        }
+
+        .sig-block.client-sig {
+            background: #fff;
+            border-style: dashed;
         }
 
         .sig-block .sig-title {
@@ -748,11 +755,16 @@
                 ════════════════════════════════════════ -->
                 <div class="signatures-wrapper">
                     <div class="signatures-row">
-                        <!-- يمين: توقيع الطرف الأول فقط -->
+                        <!-- يمين: توقيع الطرف الأول -->
                         <div class="sig-block">
                             <div class="sig-title">توقيع الطرف الأول وختمه</div>
                             <img id="docSigImg" class="sig-img" style="display:none;">
                             <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+                        </div>
+                        <!-- يسار: توقيع الطرف الثاني (العميل) -->
+                        <div class="sig-block client-sig">
+                            <div class="sig-title">توقيع الطرف الثاني وختمه (العميل)</div>
+                            <div class="sig-line">{{ contract.client.name if contract.client else '' }}</div>
                         </div>
                     </div>
                     <!-- الختم في المنتصف أسفل -->
