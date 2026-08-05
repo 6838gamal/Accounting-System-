@@ -283,22 +283,8 @@
     </div>
     {% endif %}
 
-    <!-- التوقيعات -->
+    <!-- التوقيعات — توقيع الطرف الأول معلّق -->
     <div class="signatures">
-        <div class="sig-box">
-            <div class="sig-label">توقيع الطرف الأول والختم</div>
-            <div class="stamp-area">
-                {% if settings.get('company_stamp') %}
-                <img src="{{ settings.get('company_stamp') }}" alt="ختم الشركة">
-                {% endif %}
-            </div>
-            <div class="sig-line">
-                {{ settings.get('company_name', 'اسم الشركة') }}
-                {% if settings.get('pdf_signatory_title') %}
-                <br><span style="font-size:11px">{{ settings.get('pdf_signatory_title') }}</span>
-                {% endif %}
-            </div>
-        </div>
         <div class="sig-box">
             <div class="sig-label">توقيع الطرف الثاني (العميل) والختم</div>
             <div class="stamp-area"></div>
