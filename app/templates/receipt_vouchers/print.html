@@ -96,13 +96,15 @@
         /* التوقيعات */
         .signatures {
             display: flex;
-            gap: 20px;
+            gap: 16px;
             margin-top: 36px;
             padding-top: 20px;
             border-top: 1px dashed #cbd5e1;
+            justify-content: flex-end;
         }
         .sig-box {
-            flex: 1;
+            flex: 0 0 180px;
+            width: 180px;
             text-align: center;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
@@ -218,12 +220,6 @@
                 <img id="docSigImg" style="display:none; max-width:120px; max-height:65px; object-fit:contain;">
             </div>
             <div class="sig-line">{{ settings.get('pdf_signatory_title', 'المدير العام') }}</div>
-        </div>
-        <!-- يسار: توقيع الدافع -->
-        <div class="sig-box">
-            <div class="sig-label">توقيع الدافع (تأكيد الدفع)</div>
-            <div style="min-height:72px;"></div>
-            <div class="sig-line">{{ voucher.received_from }}</div>
         </div>
     </div>
 

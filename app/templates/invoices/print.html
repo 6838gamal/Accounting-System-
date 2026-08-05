@@ -70,8 +70,8 @@
         .notes-label { font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
 
         /* التوقيعات */
-        .signatures { display: flex; gap: 20px; margin-top: 36px; padding-top: 20px; border-top: 1px dashed #cbd5e1; }
-        .sig-box { flex: 1; text-align: center; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; }
+        .signatures { display: flex; gap: 16px; margin-top: 36px; padding-top: 20px; border-top: 1px dashed #cbd5e1; justify-content: flex-end; }
+        .sig-box { flex: 0 0 180px; width: 180px; text-align: center; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; }
         .sig-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 8px; }
         .sig-line  { border-top: 1px solid #94a3b8; padding-top: 6px; font-size: 11px; color: #64748b; margin-top: 40px; }
 
@@ -184,12 +184,6 @@
                 <img id="docSigImg" style="display:none; max-width:120px; max-height:65px; object-fit:contain;">
             </div>
             <div class="sig-line">{{ settings.get('company_name', '') }}</div>
-        </div>
-        <!-- يسار: توقيع العميل -->
-        <div class="sig-box">
-            <div class="sig-label">توقيع العميل (استلام الفاتورة)</div>
-            <div style="min-height:72px;"></div>
-            <div class="sig-line">{{ invoice.client.name if invoice.client else '' }}</div>
         </div>
     </div>
 

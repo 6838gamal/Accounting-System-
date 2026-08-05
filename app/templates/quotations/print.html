@@ -175,13 +175,14 @@
         /* التوقيعات */
         .signatures {
             display: flex;
-            gap: 40px;
+            gap: 16px;
             margin-top: 40px;
             padding-top: 20px;
             border-top: 1px dashed #cbd5e1;
+            justify-content: flex-end;
         }
-        .sig-box { flex: 1; text-align: center; }
-        .sig-box .sig-label { font-weight: 600; color: #374151; margin-bottom: 48px; }
+        .sig-box { flex: 0 0 180px; width: 180px; text-align: center; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; }
+        .sig-box .sig-label { font-weight: 600; color: #374151; margin-bottom: 48px; font-size: 12px; }
         .sig-box .sig-line  {
             border-top: 1px solid #1e293b;
             padding-top: 6px;
@@ -324,12 +325,6 @@
                 <img id="docSigImg" style="display:none; max-width:120px; max-height:65px; object-fit:contain;">
             </div>
             <div class="sig-line">{{ settings.get('company_name', '') }}</div>
-        </div>
-        <!-- يسار: توقيع العميل -->
-        <div class="sig-box">
-            <div class="sig-label">توقيع العميل (قبول العرض)</div>
-            <div style="min-height:72px;"></div>
-            <div class="sig-line">{{ quotation.client.name if quotation.client else '' }}</div>
         </div>
     </div>
 
