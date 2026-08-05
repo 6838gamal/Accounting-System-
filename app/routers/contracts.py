@@ -1,6 +1,7 @@
 """
 مسارات إدارة العقود
 """
+import logging
 from datetime import datetime
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -17,6 +18,7 @@ from app.config import settings
 
 router = APIRouter(prefix="/contracts", tags=["contracts"])
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 
 def _generate_number(db: Session) -> str:
@@ -62,28 +64,43 @@ async def create_contract(
         return RedirectResponse(url="/auth/login", status_code=302)
     from datetime import date
     clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+
+    def _form_error(msg: str):
+        return templates.TemplateResponse("contracts/form.html", {
+            "request": request, "contract": None, "clients": clients, "error": msg
+        })
+
+    try:
+        parsed_start = date.fromisoformat(start_date) if start_date else None
+        parsed_end = date.fromisoformat(end_date) if end_date else None
+    except (ValueError, TypeError):
+        return _form_error("تاريخ غير صالح. يرجى التحقق من تواريخ العقد.")
+
     try:
         contract = Contract(
             contract_number=_generate_number(db),
             client_id=client_id, title=title,
             description=description or None,
             amount=Decimal(str(amount)),
-            start_date=date.fromisoformat(start_date) if start_date else None,
-            end_date=date.fromisoformat(end_date) if end_date else None,
+            start_date=parsed_start,
+            end_date=parsed_end,
             notes=notes or None,
             created_by=request.session["user_id"],
         )
         db.add(contract)
         db.commit()
         db.refresh(contract)
-        ActivityService(db).log(request.session["user_id"], "create", "contracts", contract.id, f"إنشاء عقد: {title}")
-        return RedirectResponse(url=f"/contracts/{contract.id}", status_code=302)
     except Exception:
+        logger.exception("خطأ أثناء إنشاء العقد")
         db.rollback()
-        return templates.TemplateResponse("contracts/form.html", {
-            "request": request, "contract": None, "clients": clients,
-            "error": "حدث خطأ أثناء إنشاء العقد. يرجى التحقق من البيانات.",
-        })
+        return _form_error("حدث خطأ أثناء إنشاء العقد. يرجى التحقق من البيانات.")
+
+    try:
+        ActivityService(db).log(request.session["user_id"], "create", "contracts", contract.id, f"إنشاء عقد: {title}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط لإنشاء العقد %s", contract.id)
+
+    return RedirectResponse(url=f"/contracts/{contract.id}", status_code=302)
 
 
 @router.get("/{contract_id}", response_class=HTMLResponse)
@@ -124,24 +141,39 @@ async def update_contract(
     if not contract:
         raise HTTPException(status_code=404)
     clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+
+    def _form_error(msg: str):
+        return templates.TemplateResponse("contracts/form.html", {
+            "request": request, "contract": contract, "clients": clients, "error": msg
+        })
+
+    try:
+        parsed_start = date.fromisoformat(start_date) if start_date else None
+        parsed_end = date.fromisoformat(end_date) if end_date else None
+    except (ValueError, TypeError):
+        return _form_error("تاريخ غير صالح. يرجى التحقق من تواريخ العقد.")
+
     try:
         contract.client_id = client_id
         contract.title = title
         contract.description = description or None
         contract.amount = Decimal(str(amount))
-        contract.start_date = date.fromisoformat(start_date) if start_date else None
-        contract.end_date = date.fromisoformat(end_date) if end_date else None
+        contract.start_date = parsed_start
+        contract.end_date = parsed_end
         contract.status = ContractStatus(status)
         contract.notes = notes or None
         db.commit()
-        ActivityService(db).log(request.session["user_id"], "update", "contracts", contract_id, f"تعديل عقد: {title}")
-        return RedirectResponse(url=f"/contracts/{contract_id}", status_code=302)
     except Exception:
+        logger.exception("خطأ أثناء تعديل العقد %s", contract_id)
         db.rollback()
-        return templates.TemplateResponse("contracts/form.html", {
-            "request": request, "contract": contract, "clients": clients,
-            "error": "حدث خطأ أثناء حفظ التعديلات. يرجى التحقق من البيانات.",
-        })
+        return _form_error("حدث خطأ أثناء حفظ التعديلات. يرجى التحقق من البيانات.")
+
+    try:
+        ActivityService(db).log(request.session["user_id"], "update", "contracts", contract_id, f"تعديل عقد: {title}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط لتعديل العقد %s", contract_id)
+
+    return RedirectResponse(url=f"/contracts/{contract_id}", status_code=302)
 
 
 @router.get("/{contract_id}/print", response_class=HTMLResponse)
@@ -181,8 +213,12 @@ async def download_contract_pdf(request: Request, contract_id: int, db: Session 
     if not contract:
         raise HTTPException(status_code=404, detail="العقد غير موجود")
     company_settings = SettingsService(db).get_all()
-    from app.services.pdf_service import generate_contract_pdf
-    pdf_bytes = generate_contract_pdf(contract, company_settings)
+    try:
+        from app.services.pdf_service import generate_contract_pdf
+        pdf_bytes = generate_contract_pdf(contract, company_settings)
+    except Exception:
+        logger.exception("فشل توليد PDF للعقد %s", contract_id)
+        raise HTTPException(status_code=500, detail="حدث خطأ أثناء توليد ملف PDF")
     filename = f"contract-{contract.contract_number}.pdf"
     return Response(
         content=pdf_bytes,
@@ -199,19 +235,30 @@ async def contract_to_invoice(request: Request, contract_id: int, db: Session = 
     contract = db.query(Contract).filter(Contract.id == contract_id).first()
     if not contract:
         raise HTTPException(status_code=404)
-    from app.services.invoice_service import InvoiceService
-    from datetime import date
-    service = InvoiceService(db)
-    invoice = service.create(
-        {
-            "client_id": contract.client_id,
-            "contract_id": contract.id,
-            "issue_date": date.today(),
-            "tax_rate": Decimal("0"),
-            "discount": Decimal("0"),
-            "notes": f"تم إنشاؤها من العقد رقم {contract.contract_number}",
-        },
-        items_data=[{"description": contract.title, "quantity": 1, "unit_price": float(contract.amount)}],
-        created_by=request.session["user_id"],
-    )
+    try:
+        from app.services.invoice_service import InvoiceService
+        from datetime import date
+        service = InvoiceService(db)
+        invoice = service.create(
+            {
+                "client_id": contract.client_id,
+                "contract_id": contract.id,
+                "issue_date": date.today(),
+                "tax_rate": Decimal("0"),
+                "discount": Decimal("0"),
+                "notes": f"تم إنشاؤها من العقد رقم {contract.contract_number}",
+            },
+            items_data=[{"description": contract.title, "quantity": 1, "unit_price": float(contract.amount)}],
+            created_by=request.session["user_id"],
+        )
+    except Exception:
+        logger.exception("خطأ أثناء تحويل العقد %s إلى فاتورة", contract_id)
+        db.rollback()
+        return RedirectResponse(url=f"/contracts/{contract_id}?error=1", status_code=302)
+
+    try:
+        ActivityService(db).log(request.session["user_id"], "create", "invoices", invoice.id, f"تحويل من عقد: {contract.contract_number}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط لتحويل العقد %s", contract_id)
+
     return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)

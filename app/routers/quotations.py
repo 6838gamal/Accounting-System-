@@ -2,6 +2,7 @@
 مسارات عروض الأسعار
 """
 import json
+import logging
 from datetime import date, datetime
 from decimal import Decimal
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
@@ -18,6 +19,7 @@ from app.config import settings as app_settings
 
 router = APIRouter(prefix="/quotations", tags=["quotations"])
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 
 def _gen_number(db: Session) -> str:
@@ -56,6 +58,7 @@ async def new_quotation(request: Request, db: Session = Depends(get_db)):
         "request": request, "quotation": None, "clients": clients,
         "default_tax_rate": s.get("default_tax_rate", "15"),
         "currency": s.get("currency", "SAR"),
+        "error": None,
     })
 
 
@@ -70,14 +73,38 @@ async def create_quotation(
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    s = SettingsService(db).get_all()
+
+    def _form_error(msg: str):
+        return templates.TemplateResponse("quotations/form.html", {
+            "request": request, "quotation": None, "clients": clients,
+            "default_tax_rate": s.get("default_tax_rate", "15"),
+            "currency": s.get("currency", "SAR"),
+            "error": msg,
+        })
+
     try:
         items = json.loads(items_json)
+        if not isinstance(items, list):
+            raise ValueError("items must be a list")
+    except (json.JSONDecodeError, ValueError):
+        return _form_error("بيانات البنود غير صالحة. يرجى إعادة إدخال البنود.")
+
+    if not items:
+        return _form_error("يجب إضافة بند واحد على الأقل في العرض.")
+
+    try:
+        parsed_valid_until = date.fromisoformat(valid_until) if valid_until else None
+    except (ValueError, TypeError):
+        return _form_error("تاريخ الصلاحية غير صالح.")
+
+    try:
         subtotal, tax, total = _calc(items, tax_rate, discount)
         q = Quotation(
             quote_number=_gen_number(db), client_id=client_id, title=title,
             tax_rate=Decimal(str(tax_rate)), discount=Decimal(str(discount)),
             subtotal=subtotal, tax_amount=tax, total=total,
-            valid_until=date.fromisoformat(valid_until) if valid_until else None,
+            valid_until=parsed_valid_until,
             notes=notes or None, created_by=request.session["user_id"],
         )
         db.add(q)
@@ -89,17 +116,17 @@ async def create_quotation(
                                   quantity=qty, unit_price=price, total=qty * price, sort_order=i))
         db.commit()
         db.refresh(q)
-        ActivityService(db).log(request.session["user_id"], "create", "quotations", q.id, f"إنشاء عرض: {q.quote_number}")
-        return RedirectResponse(url=f"/quotations/{q.id}", status_code=302)
     except Exception:
+        logger.exception("خطأ أثناء إنشاء عرض السعر")
         db.rollback()
-        s = SettingsService(db).get_all()
-        return templates.TemplateResponse("quotations/form.html", {
-            "request": request, "quotation": None, "clients": clients,
-            "default_tax_rate": s.get("default_tax_rate", "15"),
-            "currency": s.get("currency", "SAR"),
-            "error": "حدث خطأ أثناء إنشاء العرض. يرجى التحقق من البيانات.",
-        })
+        return _form_error("حدث خطأ أثناء إنشاء العرض. يرجى التحقق من البيانات.")
+
+    try:
+        ActivityService(db).log(request.session["user_id"], "create", "quotations", q.id, f"إنشاء عرض: {q.quote_number}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط لإنشاء عرض السعر %s", q.id)
+
+    return RedirectResponse(url=f"/quotations/{q.id}", status_code=302)
 
 
 @router.get("/{qid}", response_class=HTMLResponse)
@@ -138,8 +165,12 @@ async def download_quotation_pdf(request: Request, qid: int, db: Session = Depen
     if not q:
         raise HTTPException(status_code=404)
     company_settings = SettingsService(db).get_all()
-    from app.services.pdf_service import generate_quotation_pdf
-    pdf_bytes = generate_quotation_pdf(q, company_settings)
+    try:
+        from app.services.pdf_service import generate_quotation_pdf
+        pdf_bytes = generate_quotation_pdf(q, company_settings)
+    except Exception:
+        logger.exception("فشل توليد PDF لعرض السعر %s", qid)
+        raise HTTPException(status_code=500, detail="حدث خطأ أثناء توليد ملف PDF")
     filename = f"quotation-{q.quote_number}.pdf"
     return Response(
         content=pdf_bytes,
@@ -156,14 +187,25 @@ async def quotation_to_invoice(request: Request, qid: int, db: Session = Depends
     q = db.query(Quotation).filter(Quotation.id == qid).first()
     if not q:
         raise HTTPException(status_code=404)
-    from app.services.invoice_service import InvoiceService
-    service = InvoiceService(db)
-    items = [{"description": i.description, "quantity": float(i.quantity), "unit_price": float(i.unit_price)} for i in q.items]
-    invoice = service.create(
-        {"client_id": q.client_id, "quotation_id": q.id, "issue_date": date.today(),
-         "tax_rate": q.tax_rate, "discount": q.discount, "notes": q.notes},
-        items_data=items, created_by=request.session["user_id"],
-    )
-    q.status = QuotationStatus.ACCEPTED
-    db.commit()
+    try:
+        from app.services.invoice_service import InvoiceService
+        service = InvoiceService(db)
+        items = [{"description": i.description, "quantity": float(i.quantity), "unit_price": float(i.unit_price)} for i in q.items]
+        invoice = service.create(
+            {"client_id": q.client_id, "quotation_id": q.id, "issue_date": date.today(),
+             "tax_rate": q.tax_rate, "discount": q.discount, "notes": q.notes},
+            items_data=items, created_by=request.session["user_id"],
+        )
+        q.status = QuotationStatus.ACCEPTED
+        db.commit()
+    except Exception:
+        logger.exception("خطأ أثناء تحويل عرض السعر %s إلى فاتورة", qid)
+        db.rollback()
+        return RedirectResponse(url=f"/quotations/{qid}?error=1", status_code=302)
+
+    try:
+        ActivityService(db).log(request.session["user_id"], "create", "invoices", invoice.id, f"تحويل من عرض: {q.quote_number}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط لتحويل العرض %s", qid)
+
     return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)

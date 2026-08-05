@@ -7,11 +7,23 @@ from app.config import settings
 
 
 _db_url = settings.effective_db_url
+_is_sqlite = _db_url.startswith("sqlite")
 engine = create_engine(
     _db_url,
-    connect_args={"check_same_thread": False} if _db_url.startswith("sqlite") else {},
+    connect_args={"check_same_thread": False, "timeout": 30} if _is_sqlite else {},
     echo=settings.DEBUG,
 )
+
+# Enable WAL mode and busy timeout for SQLite to prevent "database is locked" errors
+if _is_sqlite:
+    from sqlalchemy import event as _sa_event
+
+    @_sa_event.listens_for(engine, "connect")
+    def _set_sqlite_pragmas(dbapi_conn, _conn_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=30000")
+        cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

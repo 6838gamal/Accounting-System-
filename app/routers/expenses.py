@@ -1,6 +1,7 @@
 """
 مسارات إدارة المصروفات
 """
+import logging
 from datetime import date
 from decimal import Decimal
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
@@ -14,6 +15,7 @@ from app.services.activity_service import ActivityService
 
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 EXPENSE_CATEGORIES = [
     "رواتب", "إيجار", "مرافق", "تسويق", "سفر", "معدات", "صيانة",
@@ -43,7 +45,7 @@ async def new_expense(request: Request):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     return templates.TemplateResponse("expenses/form.html", {
-        "request": request, "expense": None, "categories": EXPENSE_CATEGORIES
+        "request": request, "expense": None, "categories": EXPENSE_CATEGORIES, "error": None
     })
 
 
@@ -56,17 +58,38 @@ async def create_expense(
 ):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
-    expense = Expense(
-        title=title, category=category,
-        amount=Decimal(str(amount)),
-        expense_date=date.fromisoformat(expense_date),
-        description=description or None,
-        created_by=request.session["user_id"],
-    )
-    db.add(expense)
-    db.commit()
-    db.refresh(expense)
-    ActivityService(db).log(request.session["user_id"], "create", "expenses", expense.id, f"مصروف: {title}")
+
+    def _form_error(msg: str):
+        return templates.TemplateResponse("expenses/form.html", {
+            "request": request, "expense": None, "categories": EXPENSE_CATEGORIES, "error": msg
+        })
+
+    try:
+        parsed_date = date.fromisoformat(expense_date)
+    except (ValueError, TypeError):
+        return _form_error("تاريخ غير صالح. يرجى التحقق من تاريخ المصروف.")
+
+    try:
+        expense = Expense(
+            title=title, category=category,
+            amount=Decimal(str(amount)),
+            expense_date=parsed_date,
+            description=description or None,
+            created_by=request.session["user_id"],
+        )
+        db.add(expense)
+        db.commit()
+        db.refresh(expense)
+    except Exception:
+        logger.exception("خطأ أثناء إنشاء المصروف")
+        db.rollback()
+        return _form_error("حدث خطأ أثناء حفظ المصروف. يرجى التحقق من البيانات.")
+
+    try:
+        ActivityService(db).log(request.session["user_id"], "create", "expenses", expense.id, f"مصروف: {title}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط للمصروف %s", expense.id)
+
     return RedirectResponse(url="/expenses", status_code=302)
 
 
@@ -75,9 +98,14 @@ async def approve_expense(request: Request, expense_id: int, db: Session = Depen
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     expense = db.query(Expense).filter(Expense.id == expense_id).first()
-    if expense:
+    if not expense:
+        raise HTTPException(status_code=404, detail="المصروف غير موجود")
+    try:
         expense.status = ExpenseStatus.APPROVED
         db.commit()
+    except Exception:
+        logger.exception("خطأ أثناء اعتماد المصروف %s", expense_id)
+        db.rollback()
     return RedirectResponse(url="/expenses", status_code=302)
 
 
@@ -86,7 +114,12 @@ async def reject_expense(request: Request, expense_id: int, db: Session = Depend
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     expense = db.query(Expense).filter(Expense.id == expense_id).first()
-    if expense:
+    if not expense:
+        raise HTTPException(status_code=404, detail="المصروف غير موجود")
+    try:
         expense.status = ExpenseStatus.REJECTED
         db.commit()
+    except Exception:
+        logger.exception("خطأ أثناء رفض المصروف %s", expense_id)
+        db.rollback()
     return RedirectResponse(url="/expenses", status_code=302)

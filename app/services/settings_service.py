@@ -56,10 +56,23 @@ class SettingsService:
         self.db.commit()
         return setting
 
+    def set_no_commit(self, key: str, value: str) -> AppSetting:
+        """تعديل إعداد دون commit — للاستخدام ضمن معاملة مجمّعة."""
+        setting = self.db.query(AppSetting).filter(AppSetting.key == key).first()
+        if setting:
+            setting.value = value
+        else:
+            desc = DEFAULT_SETTINGS.get(key, ("", ""))[1]
+            setting = AppSetting(key=key, value=value, description=desc)
+            self.db.add(setting)
+        return setting
+
     def save_all(self, data: dict) -> None:
+        """حفظ مجموعة من الإعدادات في معاملة واحدة."""
         for key, value in data.items():
             if key in DEFAULT_SETTINGS:
-                self.set(key, value)
+                self.set_no_commit(key, value)
+        self.db.commit()
 
     def init_defaults(self) -> None:
         """تهيئة الإعدادات الافتراضية"""

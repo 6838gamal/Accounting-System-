@@ -3,6 +3,12 @@
 {% block page_title %}تفاصيل العقد{% endblock %}
 
 {% block content %}
+{% if request.query_params.get('error') %}
+<div class="alert alert-danger alert-dismissible fade show mb-3">
+    <i class="bi bi-exclamation-triangle me-2"></i>حدث خطأ أثناء تحويل العقد إلى فاتورة. يرجى المحاولة مرة أخرى.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
 <div class="page-header">
     <div>
         <h1><i class="bi bi-file-earmark-check me-2"></i>{{ contract.contract_number }}</h1>

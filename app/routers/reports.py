@@ -17,6 +17,16 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 templates = Jinja2Templates(directory="app/templates")
 
 
+def _parse_date(value: Optional[str], fallback: date) -> date:
+    """تحليل التاريخ من نص مع احتياطي عند الخطأ."""
+    if not value:
+        return fallback
+    try:
+        return date.fromisoformat(value)
+    except (ValueError, TypeError):
+        return fallback
+
+
 @router.get("", response_class=HTMLResponse)
 async def reports_index(request: Request):
     if not request.session.get("user_id"):
@@ -32,8 +42,8 @@ async def sales_report(
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     today = date.today()
-    start = date.fromisoformat(start_date) if start_date else date(today.year, today.month, 1)
-    end = date.fromisoformat(end_date) if end_date else today
+    start = _parse_date(start_date, date(today.year, today.month, 1))
+    end = _parse_date(end_date, today)
     report = ReportService(db).get_sales_report(start, end)
     return templates.TemplateResponse("reports/sales.html", {"request": request, "report": report})
 
@@ -46,8 +56,8 @@ async def clients_report(
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     today = date.today()
-    start = date.fromisoformat(start_date) if start_date else date(today.year, 1, 1)
-    end = date.fromisoformat(end_date) if end_date else today
+    start = _parse_date(start_date, date(today.year, 1, 1))
+    end = _parse_date(end_date, today)
     data = ReportService(db).get_client_report(start, end)
     return templates.TemplateResponse("reports/clients.html", {"request": request, "data": data, "start": start, "end": end})
 
@@ -60,8 +70,8 @@ async def expenses_report(
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     today = date.today()
-    start = date.fromisoformat(start_date) if start_date else date(today.year, today.month, 1)
-    end = date.fromisoformat(end_date) if end_date else today
+    start = _parse_date(start_date, date(today.year, today.month, 1))
+    end = _parse_date(end_date, today)
     report = ReportService(db).get_expense_report(start, end)
     return templates.TemplateResponse("reports/expenses.html", {"request": request, "report": report})
 
@@ -74,8 +84,8 @@ async def profit_loss_report(
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     today = date.today()
-    start = date.fromisoformat(start_date) if start_date else date(today.year, 1, 1)
-    end = date.fromisoformat(end_date) if end_date else today
+    start = _parse_date(start_date, date(today.year, 1, 1))
+    end = _parse_date(end_date, today)
     report = ReportService(db).get_profit_loss(start, end)
     return templates.TemplateResponse("reports/profit_loss.html", {"request": request, "report": report})
 
@@ -88,8 +98,8 @@ async def sales_excel(
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     today = date.today()
-    start = date.fromisoformat(start_date) if start_date else date(today.year, today.month, 1)
-    end = date.fromisoformat(end_date) if end_date else today
+    start = _parse_date(start_date, date(today.year, today.month, 1))
+    end = _parse_date(end_date, today)
     report = ReportService(db).get_sales_report(start, end)
 
     wb = openpyxl.Workbook()

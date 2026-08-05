@@ -2,6 +2,7 @@
 مسارات إدارة الفواتير
 """
 import json
+import logging
 from datetime import date
 from decimal import Decimal
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
@@ -17,6 +18,7 @@ from app.models.client import Client
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_class=HTMLResponse)
@@ -65,23 +67,49 @@ async def create_invoice(
 ):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
+
+    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    s = SettingsService(db).get_all()
+    from datetime import date as _date
+
+    def _form_error(msg: str):
+        return templates.TemplateResponse("invoices/form.html", {
+            "request": request, "invoice": None, "clients": clients,
+            "default_tax_rate": s.get("default_tax_rate", "15"),
+            "currency": s.get("currency", "SAR"),
+            "default_notes": s.get("invoice_notes", ""),
+            "error": msg,
+            "today": _date.today(),
+        })
+
+    # Parse items
     try:
         items = json.loads(items_json) if items_json else []
         if not isinstance(items, list):
             raise ValueError("items_json must be a list")
-        # حد أقصى 100 بند لمنع DoS
         if len(items) > 100:
             items = items[:100]
     except (json.JSONDecodeError, ValueError):
-        items = []
-    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+        return _form_error("بيانات البنود غير صالحة. يرجى إعادة إدخال البنود.")
+
+    if not items:
+        return _form_error("يجب إضافة بند واحد على الأقل في الفاتورة.")
+
+    # Parse dates
+    try:
+        parsed_issue = date.fromisoformat(issue_date)
+        parsed_due = date.fromisoformat(due_date) if due_date else None
+    except (ValueError, TypeError):
+        return _form_error("تاريخ غير صالح. يرجى التحقق من تواريخ الفاتورة.")
+
+    # Save invoice
     try:
         service = InvoiceService(db)
         invoice = service.create(
             {
                 "client_id": client_id,
-                "issue_date": date.fromisoformat(issue_date),
-                "due_date": date.fromisoformat(due_date) if due_date else None,
+                "issue_date": parsed_issue,
+                "due_date": parsed_due,
                 "tax_rate": Decimal(str(tax_rate)),
                 "discount": Decimal(str(discount)),
                 "notes": notes or None,
@@ -89,20 +117,18 @@ async def create_invoice(
             items_data=items,
             created_by=request.session["user_id"],
         )
-        ActivityService(db).log(request.session["user_id"], "create", "invoices", invoice.id, f"إنشاء فاتورة: {invoice.invoice_number}")
-        return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
     except Exception:
+        logger.exception("خطأ أثناء إنشاء الفاتورة")
         db.rollback()
-        s = SettingsService(db).get_all()
-        from datetime import date as _date
-        return templates.TemplateResponse("invoices/form.html", {
-            "request": request, "invoice": None, "clients": clients,
-            "default_tax_rate": s.get("default_tax_rate", "15"),
-            "currency": s.get("currency", "SAR"),
-            "default_notes": s.get("invoice_notes", ""),
-            "error": "حدث خطأ أثناء حفظ الفاتورة. يرجى التحقق من البيانات.",
-            "today": _date.today(),
-        })
+        return _form_error("حدث خطأ أثناء حفظ الفاتورة. يرجى التحقق من البيانات.")
+
+    # Activity log is non-critical — never block the redirect on its failure
+    try:
+        ActivityService(db).log(request.session["user_id"], "create", "invoices", invoice.id, f"إنشاء فاتورة: {invoice.invoice_number}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط لإنشاء الفاتورة %s", invoice.id)
+
+    return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
 
 
 @router.get("/{invoice_id}/edit", response_class=HTMLResponse)
@@ -136,12 +162,27 @@ async def update_invoice(
 ):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
-    # التحقق من إمكانية التعديل قبل المعالجة
+
     existing = InvoiceService(db).get_by_id(invoice_id)
     if not existing:
         raise HTTPException(status_code=404, detail="الفاتورة غير موجودة")
     if existing.status.value in ("paid", "cancelled"):
         raise HTTPException(status_code=403, detail="لا يمكن تعديل فاتورة مدفوعة أو ملغاة")
+
+    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+    s = SettingsService(db).get_all()
+
+    def _form_error(msg: str):
+        return templates.TemplateResponse("invoices/form.html", {
+            "request": request, "invoice": existing, "clients": clients,
+            "default_tax_rate": s.get("default_tax_rate", "15"),
+            "currency": s.get("currency", "SAR"),
+            "default_notes": s.get("invoice_notes", ""),
+            "error": msg,
+            "today": existing.issue_date,
+        })
+
+    # Parse items
     try:
         items = json.loads(items_json) if items_json else []
         if not isinstance(items, list):
@@ -149,35 +190,45 @@ async def update_invoice(
         if len(items) > 100:
             items = items[:100]
     except (json.JSONDecodeError, ValueError):
-        items = []
-    clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
+        return _form_error("بيانات البنود غير صالحة. يرجى إعادة إدخال البنود.")
+
+    if not items:
+        return _form_error("يجب إضافة بند واحد على الأقل في الفاتورة.")
+
+    # Parse dates
+    try:
+        parsed_issue = date.fromisoformat(issue_date)
+        parsed_due = date.fromisoformat(due_date) if due_date else None
+    except (ValueError, TypeError):
+        return _form_error("تاريخ غير صالح. يرجى التحقق من تواريخ الفاتورة.")
+
+    # Save changes
     try:
         service = InvoiceService(db)
         invoice = service.update(
             invoice_id,
             {
                 "client_id": client_id,
-                "issue_date": date.fromisoformat(issue_date),
-                "due_date": date.fromisoformat(due_date) if due_date else None,
+                "issue_date": parsed_issue,
+                "due_date": parsed_due,
                 "tax_rate": Decimal(str(tax_rate)),
                 "discount": Decimal(str(discount)),
                 "notes": notes or None,
             },
             items_data=items,
         )
-        ActivityService(db).log(request.session["user_id"], "update", "invoices", invoice.id, f"تعديل فاتورة: {invoice.invoice_number}")
-        return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
     except Exception:
+        logger.exception("خطأ أثناء تعديل الفاتورة %s", invoice_id)
         db.rollback()
-        s = SettingsService(db).get_all()
-        return templates.TemplateResponse("invoices/form.html", {
-            "request": request, "invoice": existing, "clients": clients,
-            "default_tax_rate": s.get("default_tax_rate", "15"),
-            "currency": s.get("currency", "SAR"),
-            "default_notes": s.get("invoice_notes", ""),
-            "error": "حدث خطأ أثناء حفظ التعديلات. يرجى التحقق من البيانات.",
-            "today": existing.issue_date,
-        })
+        return _form_error("حدث خطأ أثناء حفظ التعديلات. يرجى التحقق من البيانات.")
+
+    # Activity log is non-critical
+    try:
+        ActivityService(db).log(request.session["user_id"], "update", "invoices", invoice.id, f"تعديل فاتورة: {invoice.invoice_number}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط لتعديل الفاتورة %s", invoice_id)
+
+    return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=302)
 
 
 @router.get("/{invoice_id}", response_class=HTMLResponse)
@@ -214,8 +265,12 @@ async def invoice_pdf(request: Request, invoice_id: int, db: Session = Depends(g
     if not invoice:
         raise HTTPException(status_code=404)
     company_settings = SettingsService(db).get_all()
-    from app.services.pdf_service import generate_invoice_pdf
-    pdf_bytes = generate_invoice_pdf(invoice, company_settings)
+    try:
+        from app.services.pdf_service import generate_invoice_pdf
+        pdf_bytes = generate_invoice_pdf(invoice, company_settings)
+    except Exception:
+        logger.exception("فشل توليد PDF للفاتورة %s", invoice_id)
+        raise HTTPException(status_code=500, detail="حدث خطأ أثناء توليد ملف PDF")
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -232,12 +287,28 @@ async def add_payment(
 ):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
-    service = InvoiceService(db)
-    service.record_payment(
-        invoice_id=invoice_id,
-        amount=Decimal(str(amount)),
-        payment_data={"payment_date": date.fromisoformat(payment_date), "method": method, "reference": reference, "notes": notes},
-        created_by=request.session["user_id"],
-    )
-    ActivityService(db).log(request.session["user_id"], "payment", "invoices", invoice_id, f"دفعة: {amount}")
+
+    try:
+        parsed_date = date.fromisoformat(payment_date)
+    except (ValueError, TypeError):
+        return RedirectResponse(url=f"/invoices/{invoice_id}?payment_error=1", status_code=302)
+
+    try:
+        service = InvoiceService(db)
+        service.record_payment(
+            invoice_id=invoice_id,
+            amount=Decimal(str(amount)),
+            payment_data={"payment_date": parsed_date, "method": method, "reference": reference, "notes": notes},
+            created_by=request.session["user_id"],
+        )
+    except Exception:
+        logger.exception("خطأ أثناء تسجيل الدفعة للفاتورة %s", invoice_id)
+        db.rollback()
+        return RedirectResponse(url=f"/invoices/{invoice_id}?payment_error=1", status_code=302)
+
+    try:
+        ActivityService(db).log(request.session["user_id"], "payment", "invoices", invoice_id, f"دفعة: {amount}")
+    except Exception:
+        logger.warning("فشل تسجيل النشاط للدفعة على الفاتورة %s", invoice_id)
+
     return RedirectResponse(url=f"/invoices/{invoice_id}", status_code=302)

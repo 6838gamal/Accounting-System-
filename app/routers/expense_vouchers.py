@@ -1,8 +1,10 @@
 """
 مسارات سندات المصاريف
 """
+import logging
 from datetime import date, datetime
 from decimal import Decimal
+from urllib.parse import quote_plus
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -16,6 +18,7 @@ from app.services.settings_service import SettingsService
 
 router = APIRouter(prefix="/expense-vouchers", tags=["expense_vouchers"])
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 EXPENSE_CATEGORIES = [
     "رواتب", "إيجار", "مرافق", "تسويق", "سفر", "معدات", "صيانة",
@@ -38,6 +41,14 @@ def _next_voucher_number(db: Session) -> str:
 
 def _require_login(request: Request):
     return request.session.get("user_id")
+
+
+def _err_redirect(base: str, msg: str) -> RedirectResponse:
+    return RedirectResponse(url=f"{base}?error={quote_plus(msg)}", status_code=302)
+
+
+def _ok_redirect(base: str, msg: str) -> RedirectResponse:
+    return RedirectResponse(url=f"{base}?success={quote_plus(msg)}", status_code=302)
 
 
 @router.get("", response_class=HTMLResponse)
@@ -72,6 +83,7 @@ async def new_expense_voucher(request: Request, db: Session = Depends(get_db)):
         "method_labels": METHOD_LABELS,
         "suggested_number": suggested_number,
         "today": date.today().isoformat(),
+        "error": None,
     })
 
 
@@ -90,10 +102,29 @@ async def create_expense_voucher(
 ):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
+
+    def _form_error(msg: str):
+        suggested_number = _next_voucher_number(db)
+        return templates.TemplateResponse("expense_vouchers/form.html", {
+            "request": request,
+            "voucher": None,
+            "categories": EXPENSE_CATEGORIES,
+            "methods": list(VoucherPaymentMethod),
+            "method_labels": METHOD_LABELS,
+            "suggested_number": suggested_number,
+            "today": date.today().isoformat(),
+            "error": msg,
+        })
+
+    try:
+        parsed_date = date.fromisoformat(voucher_date)
+    except (ValueError, TypeError):
+        return _form_error("تاريخ غير صالح. يرجى التحقق من تاريخ السند.")
+
     try:
         voucher = ExpenseVoucher(
             voucher_number=voucher_number,
-            voucher_date=date.fromisoformat(voucher_date),
+            voucher_date=parsed_date,
             payee=payee,
             amount=Decimal(str(amount)),
             method=VoucherPaymentMethod(method),
@@ -106,14 +137,20 @@ async def create_expense_voucher(
         db.add(voucher)
         db.commit()
         db.refresh(voucher)
+    except Exception:
+        logger.exception("خطأ أثناء حفظ سند المصروف")
+        db.rollback()
+        return _form_error("حدث خطأ أثناء حفظ السند، يرجى التحقق من البيانات.")
+
+    try:
         ActivityService(db).log(
             request.session["user_id"], "create", "expense_vouchers", voucher.id,
             f"سند مصروف: {voucher_number} - {payee}"
         )
-        return RedirectResponse(url=f"/expense-vouchers/{voucher.id}", status_code=302)
     except Exception:
-        db.rollback()
-        return RedirectResponse(url="/expense-vouchers?error=حدث+خطأ+أثناء+حفظ+السند،+يرجى+التحقق+من+البيانات", status_code=302)
+        logger.warning("فشل تسجيل النشاط لسند المصروف %s", voucher.id)
+
+    return RedirectResponse(url=f"/expense-vouchers/{voucher.id}", status_code=302)
 
 
 @router.get("/{voucher_id}", response_class=HTMLResponse)
@@ -153,11 +190,28 @@ async def delete_expense_voucher(request: Request, voucher_id: int, db: Session 
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
     voucher = db.query(ExpenseVoucher).filter(ExpenseVoucher.id == voucher_id).first()
-    if voucher:
-        ActivityService(db).log(
-            request.session["user_id"], "delete", "expense_vouchers", voucher_id,
-            f"حذف سند مصروف: {voucher.voucher_number}"
-        )
+    if not voucher:
+        return RedirectResponse(url="/expense-vouchers", status_code=302)
+
+    # احفظ رقم السند قبل الحذف — بعد commit يصبح الكائن منفصلاً
+    saved_number = voucher.voucher_number
+
+    # حذف السند أولاً في معاملة مستقلة
+    try:
         db.delete(voucher)
         db.commit()
-    return RedirectResponse(url="/expense-vouchers?success=تم+حذف+السند+بنجاح", status_code=302)
+    except Exception:
+        logger.exception("خطأ أثناء حذف سند المصروف %s", voucher_id)
+        db.rollback()
+        return _err_redirect("/expense-vouchers", "حدث خطأ أثناء حذف السند.")
+
+    # تسجيل النشاط بعد الحذف — الفشل لا يُلغي الحذف
+    try:
+        ActivityService(db).log(
+            request.session["user_id"], "delete", "expense_vouchers", voucher_id,
+            f"حذف سند مصروف: {saved_number}"
+        )
+    except Exception:
+        logger.warning("فشل تسجيل النشاط لحذف سند المصروف %s", voucher_id)
+
+    return _ok_redirect("/expense-vouchers", "تم حذف السند بنجاح")
