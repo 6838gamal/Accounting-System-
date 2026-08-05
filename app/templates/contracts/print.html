@@ -45,7 +45,6 @@
             background: #fff;
         }
 
-        /* ترويسة */
         .header {
             display: flex;
             justify-content: space-between;
@@ -60,7 +59,6 @@
         .doc-number { font-size: 20px; font-weight: 700; color: #2563eb; }
         .doc-date   { font-size: 12px; color: #64748b; margin-top: 4px; }
 
-        /* حالة العقد */
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -74,7 +72,6 @@
         .badge-expired  { background: #fef9c3; color: #713f12; }
         .badge-cancelled{ background: #fee2e2; color: #991b1b; }
 
-        /* عنوان العقد */
         .contract-title {
             text-align: center;
             font-size: 18px;
@@ -87,7 +84,6 @@
             border: 1px solid #e2e8f0;
         }
 
-        /* بيانات الأطراف */
         .parties {
             display: flex;
             gap: 20px;
@@ -108,7 +104,6 @@
         }
         .party-box .name { font-size: 15px; font-weight: 700; }
 
-        /* جدول التفاصيل */
         .details-table {
             width: 100%;
             border-collapse: collapse;
@@ -131,7 +126,6 @@
             color: #2563eb;
         }
 
-        /* الوصف والملاحظات */
         .section {
             margin-bottom: 20px;
         }
@@ -151,31 +145,95 @@
             color: #475569;
         }
 
-        /* مساحة التوقيعات */
-        .signatures {
-            display: flex;
-            gap: 20px;
+        /* ════════════════════════
+           التوقيعات والختم في الطباعة
+           التوقيع يمين، التوقيع يسار، الختم في المنتصف
+        ════════════════════════ */
+        .signatures-wrapper {
             margin-top: 48px;
             padding-top: 24px;
             border-top: 1px dashed #cbd5e1;
         }
+
+        .signatures-row {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+
         .sig-box {
             flex: 1;
+            max-width: 300px;
             text-align: center;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 14px;
+            padding: 16px 14px 12px;
             background: #f8fafc;
         }
-        .sig-box .sig-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 8px; }
-        .sig-box .sig-line  {
+
+        .sig-box .sig-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .sig-box .sig-placeholder {
+            min-height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sig-box .sig-placeholder img {
+            max-width: 120px;
+            max-height: 65px;
+            object-fit: contain;
+        }
+
+        .sig-box .sig-line {
             border-top: 1px solid #94a3b8;
             padding-top: 6px;
             font-size: 11px;
             color: #64748b;
         }
 
-        /* تذييل */
+        .stamp-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .stamp-box {
+            text-align: center;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 12px 24px;
+            background: #fafafa;
+            min-width: 160px;
+        }
+
+        .stamp-box .stamp-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stamp-box .stamp-img {
+            max-width: 140px;
+            max-height: 80px;
+            object-fit: contain;
+        }
+
+        .stamp-box .stamp-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
         .footer {
             margin-top: 32px;
             text-align: center;
@@ -270,29 +328,36 @@
     </div>
     {% endif %}
 
-    <!-- التوقيعات -->
-    <div class="signatures">
-        <!-- يمين: ختم المؤسسة -->
-        <div class="sig-box">
-            <div class="sig-label">ختم المؤسسة</div>
-            <div style="text-align:center; min-height:72px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
-                <img id="docStampImg" style="display:none; max-width:120px; max-height:75px; object-fit:contain;">
+    <!-- ════════════════════════
+         التوقيعات والختم في الطباعة
+         توقيع المؤسسة يمين، توقيع العميل يسار، الختم في المنتصف
+    ════════════════════════ -->
+    <div class="signatures-wrapper">
+        <div class="signatures-row">
+            <!-- يمين: توقيع المؤسسة -->
+            <div class="sig-box">
+                <div class="sig-label">توقيع المؤسسة</div>
+                <div class="sig-placeholder">
+                    <img id="docSigImg" style="display:none;">
+                </div>
+                <div class="sig-line">{{ settings.get('company_name', '') }}</div>
             </div>
-            <div class="sig-line">{{ settings.get('company_name', '') }}</div>
-        </div>
-        <!-- وسط: توقيع المؤسسة -->
-        <div class="sig-box">
-            <div class="sig-label">توقيع المؤسسة</div>
-            <div style="text-align:center; min-height:72px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
-                <img id="docSigImg" style="display:none; max-width:120px; max-height:65px; object-fit:contain;">
+
+            <!-- يسار: توقيع العميل -->
+            <div class="sig-box">
+                <div class="sig-label">توقيع العميل (الطرف الثاني)</div>
+                <div class="sig-placeholder"></div>
+                <div class="sig-line">{{ contract.client.name if contract.client else '' }}</div>
             </div>
-            <div class="sig-line">{{ settings.get('company_name', '') }}</div>
         </div>
-        <!-- يسار: توقيع العميل -->
-        <div class="sig-box">
-            <div class="sig-label">توقيع العميل (الطرف الثاني)</div>
-            <div style="min-height:72px;"></div>
-            <div class="sig-line">{{ contract.client.name if contract.client else '' }}</div>
+
+        <!-- الختم في المنتصف إلى الأسفل -->
+        <div class="stamp-wrapper">
+            <div class="stamp-box">
+                <div class="stamp-label">ختم المؤسسة</div>
+                <img id="docStampImg" class="stamp-img" style="display:none;">
+                <div class="stamp-sub">{{ settings.get('company_name', '') }}</div>
+            </div>
         </div>
     </div>
 
