@@ -105,7 +105,7 @@ async def create_receipt_voucher(
     db.refresh(voucher)
     ActivityService(db).log(
         request.session["user_id"], "create", "receipt_vouchers", voucher.id,
-        f"سند استلام: {voucher_number} - {received_from}"
+        f"سند قبض: {voucher_number} - {received_from}"
     )
     return RedirectResponse(url=f"/receipt-vouchers/{voucher.id}", status_code=302)
 
@@ -150,7 +150,7 @@ async def delete_receipt_voucher(request: Request, voucher_id: int, db: Session 
     if voucher:
         ActivityService(db).log(
             request.session["user_id"], "delete", "receipt_vouchers", voucher_id,
-            f"حذف سند استلام: {voucher.voucher_number}"
+            f"حذف سند قبض: {voucher.voucher_number}"
         )
         db.delete(voucher)
         db.commit()

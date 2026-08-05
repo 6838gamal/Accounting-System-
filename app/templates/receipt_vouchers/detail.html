@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}سند استلام {{ voucher.voucher_number }}{% endblock %}
-{% block page_title %}سند استلام{% endblock %}
+{% block title %}سند قبض {{ voucher.voucher_number }}{% endblock %}
+{% block page_title %}سند قبض{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="bi bi-arrow-down-circle me-2"></i>سند استلام — {{ voucher.voucher_number }}</h1>
+    <h1><i class="bi bi-arrow-down-circle me-2"></i>سند قبض — {{ voucher.voucher_number }}</h1>
     <div class="d-flex gap-2">
         <a href="/receipt-vouchers/{{ voucher.id }}/print" class="btn btn-outline-success" target="_blank">
             <i class="bi bi-printer me-1"></i>طباعة / تصدير

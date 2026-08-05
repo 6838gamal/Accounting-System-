@@ -1,6 +1,7 @@
 modules = ["web", "python-3.12", "nodejs-20"]
 [nix]
 channel = "stable-25_05"
+packages = ["cargo", "fontconfig", "freetype", "ghostscript", "glib", "glibcLocales", "harfbuzz", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "pango", "rustc", "tcl", "tk", "zlib"]
 
 [agent]
 expertMode = true

@@ -11,6 +11,9 @@
         </span>
     </div>
     <div class="d-flex gap-2">
+        <a href="/invoices/{{ invoice.id }}/print" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>طباعة
+        </a>
         <a href="/invoices/{{ invoice.id }}/pdf" target="_blank" class="btn btn-outline-danger">
             <i class="bi bi-file-pdf me-1"></i>PDF
         </a>

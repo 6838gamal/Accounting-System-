@@ -161,6 +161,19 @@ async def view_invoice(request: Request, invoice_id: int, db: Session = Depends(
     })
 
 
+@router.get("/{invoice_id}/print", response_class=HTMLResponse)
+async def invoice_print(request: Request, invoice_id: int, db: Session = Depends(get_db)):
+    if not request.session.get("user_id"):
+        return RedirectResponse(url="/auth/login", status_code=302)
+    invoice = InvoiceService(db).get_by_id(invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404)
+    settings = SettingsService(db).get_all()
+    return templates.TemplateResponse("invoices/print.html", {
+        "request": request, "invoice": invoice, "settings": settings,
+    })
+
+
 @router.get("/{invoice_id}/pdf")
 async def invoice_pdf(request: Request, invoice_id: int, db: Session = Depends(get_db)):
     if not request.session.get("user_id"):

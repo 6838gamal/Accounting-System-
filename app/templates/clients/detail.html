@@ -38,7 +38,7 @@
                     <tr><th>النوع</th><td>{{ 'شركة' if client.type.value == 'company' else 'فرد' }}</td></tr>
                     <tr><th>البريد</th><td>{{ client.email or '-' }}</td></tr>
                     <tr><th>الهاتف</th><td>{{ client.phone or '-' }}</td></tr>
-                    <tr><th>الرقم الضريبي</th><td>{{ client.tax_number or '-' }}</td></tr>
+                    <tr><th>رقم المنشأة / رقم الهوية</th><td>{{ client.tax_number or '-' }}</td></tr>
                     <tr><th>العنوان</th><td>{{ client.address or '-' }}</td></tr>
                     <tr><th>تاريخ الإنشاء</th><td>{{ client.created_at.strftime('%Y-%m-%d') }}</td></tr>
                 </table>

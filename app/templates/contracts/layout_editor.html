@@ -585,7 +585,8 @@
 
                 <!-- Signatures -->
                 <div class="signatures-row" id="signaturesRow">
-                    <div class="sig-block">
+                    <!-- توقيع الطرف الأول معلّق -->
+                    <div class="sig-block" style="display:none">
                         <div class="sig-title" id="previewSig1Title">{{ settings.get('pdf_signatory_title', 'المدير العام') }}</div>
                         <img id="previewStampImg" class="sig-img" style="display:none;max-height:80px;opacity:0.88">
                         <img id="previewSig1Img" class="sig-img" style="display:none">
@@ -743,8 +744,8 @@
             </div>
         </div>
 
-        <!-- Signature 1 -->
-        <div class="panel-section">
+        <!-- Signature 1 - معلّق -->
+        <div class="panel-section" style="display:none">
             <div class="panel-section-title"><i class="bi bi-pen"></i> توقيع الطرف الأول</div>
             <label class="form-label-sm mb-1">العنوان</label>
             <input type="text" class="form-control form-control-sm mb-2" id="sig1Title"
@@ -1192,8 +1193,8 @@ function initSignaturePads() {
     const c2 = document.getElementById('sigCanvas2');
     sizeCanvas(c1); sizeCanvas(c2);
 
-    sig1Pad = new SignaturePad(c1, { penColor: '#1e293b', minWidth: 1, maxWidth: 2.5 });
-    sig2Pad = new SignaturePad(c2, { penColor: '#1e293b', minWidth: 1, maxWidth: 2.5 });
+    sig1Pad = new SignaturePad(c1, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 });
+    sig2Pad = new SignaturePad(c2, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 });
 
     sig1Pad.addEventListener('endStroke', () => { sig1HasDrawing = true; updateSig1Preview(); });
     sig2Pad.addEventListener('endStroke', () => { sig2HasDrawing = true; updateSig2Preview(); });

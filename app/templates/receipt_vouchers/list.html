@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}سندات الاستلام{% endblock %}
-{% block page_title %}سندات الاستلام{% endblock %}
+{% block title %}سندات القبض{% endblock %}
+{% block page_title %}سندات القبض{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="bi bi-arrow-down-circle me-2"></i>سندات الاستلام ({{ total }})</h1>
-    <a href="/receipt-vouchers/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>سند استلام جديد</a>
+    <h1><i class="bi bi-arrow-down-circle me-2"></i>سندات القبض ({{ total }})</h1>
+    <a href="/receipt-vouchers/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>سند قبض جديد</a>
 </div>
 
 <div class="row g-3 mb-4">
@@ -62,7 +62,7 @@
             {% else %}
             <tr><td colspan="8" class="text-center text-muted py-5">
                 <i class="bi bi-arrow-down-circle fs-3 d-block mb-2 opacity-25"></i>
-                لا توجد سندات استلام بعد
+                لا توجد سندات قبض بعد
             </td></tr>
             {% endfor %}
             </tbody>
