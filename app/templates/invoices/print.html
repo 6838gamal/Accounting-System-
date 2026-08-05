@@ -169,16 +169,26 @@
 
     <!-- التوقيعات -->
     <div class="signatures">
+        <!-- يمين: ختم المؤسسة -->
         <div class="sig-box">
-            <div class="sig-label">توقيع وختم المُصدِر</div>
-            <div style="text-align:center; min-height:50px; margin-bottom:6px;">
-                <img id="docStampImg" style="display:none; max-width:110px; max-height:65px;">
-                <img id="docSigImg" style="display:none; max-width:110px; max-height:55px; margin-top:4px;">
+            <div class="sig-label">ختم المؤسسة</div>
+            <div style="text-align:center; min-height:72px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                <img id="docStampImg" style="display:none; max-width:120px; max-height:75px; object-fit:contain;">
             </div>
             <div class="sig-line">{{ settings.get('company_name', '') }}</div>
         </div>
+        <!-- وسط: توقيع المؤسسة -->
+        <div class="sig-box">
+            <div class="sig-label">توقيع المؤسسة</div>
+            <div style="text-align:center; min-height:72px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                <img id="docSigImg" style="display:none; max-width:120px; max-height:65px; object-fit:contain;">
+            </div>
+            <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+        </div>
+        <!-- يسار: توقيع العميل -->
         <div class="sig-box">
             <div class="sig-label">توقيع العميل (استلام الفاتورة)</div>
+            <div style="min-height:72px;"></div>
             <div class="sig-line">{{ invoice.client.name if invoice.client else '' }}</div>
         </div>
     </div>

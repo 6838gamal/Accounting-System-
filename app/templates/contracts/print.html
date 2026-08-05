@@ -154,7 +154,7 @@
         /* مساحة التوقيعات */
         .signatures {
             display: flex;
-            gap: 40px;
+            gap: 20px;
             margin-top: 48px;
             padding-top: 24px;
             border-top: 1px dashed #cbd5e1;
@@ -164,27 +164,14 @@
             text-align: center;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 16px;
+            padding: 14px;
             background: #f8fafc;
         }
-        .sig-box .sig-label { font-weight: 600; color: #374151; margin-bottom: 16px; }
-        .sig-box .stamp-area {
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 8px;
-        }
-        .sig-box .stamp-area img {
-            max-height: 90px;
-            max-width: 160px;
-            object-fit: contain;
-            opacity: 0.85;
-        }
+        .sig-box .sig-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 8px; }
         .sig-box .sig-line  {
-            border-top: 1px solid #1e293b;
+            border-top: 1px solid #94a3b8;
             padding-top: 6px;
-            font-size: 12px;
+            font-size: 11px;
             color: #64748b;
         }
 
@@ -283,11 +270,28 @@
     </div>
     {% endif %}
 
-    <!-- التوقيعات — توقيع الطرف الأول معلّق -->
+    <!-- التوقيعات -->
     <div class="signatures">
+        <!-- يمين: ختم المؤسسة -->
         <div class="sig-box">
-            <div class="sig-label">توقيع الطرف الثاني (العميل) والختم</div>
-            <div class="stamp-area"></div>
+            <div class="sig-label">ختم المؤسسة</div>
+            <div style="text-align:center; min-height:72px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                <img id="docStampImg" style="display:none; max-width:120px; max-height:75px; object-fit:contain;">
+            </div>
+            <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+        </div>
+        <!-- وسط: توقيع المؤسسة -->
+        <div class="sig-box">
+            <div class="sig-label">توقيع المؤسسة</div>
+            <div style="text-align:center; min-height:72px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                <img id="docSigImg" style="display:none; max-width:120px; max-height:65px; object-fit:contain;">
+            </div>
+            <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+        </div>
+        <!-- يسار: توقيع العميل -->
+        <div class="sig-box">
+            <div class="sig-label">توقيع العميل (الطرف الثاني)</div>
+            <div style="min-height:72px;"></div>
             <div class="sig-line">{{ contract.client.name if contract.client else '' }}</div>
         </div>
     </div>
@@ -299,6 +303,57 @@
         {% if settings.get('company_email') %} | {{ settings.get('company_email') }}{% endif %}
     </div>
 </div>
+
+<!-- ═══════════════════ محرر الختم والتوقيع ═══════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<style>
+@media print { .sep-toggle, .sep-panel { display: none !important; } }
+.sep-toggle { position: fixed; bottom: 16px; left: 16px; background: #1e293b; color: #fff; border: none; border-radius: 24px; padding: 9px 18px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; z-index: 998; box-shadow: 0 4px 16px rgba(0,0,0,0.25); font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+.sep-panel { position: fixed; left: 0; top: 0; bottom: 0; width: 270px; background: #fff; border-right: 1px solid #e2e8f0; overflow-y: auto; z-index: 999; transform: translateX(-100%); transition: transform 0.28s cubic-bezier(.4,0,.2,1); box-shadow: 4px 0 24px rgba(0,0,0,0.12); font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+.sep-panel.open { transform: translateX(0); }
+.sep-topbar { background: #1e293b; color: #fff; padding: 14px 16px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1; }
+.sep-topbar-close { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 20px; line-height: 1; padding: 0; }
+.sep-section { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
+.sep-section-title { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; }
+.sep-upload-zone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; cursor: pointer; background: #f8fafc; position: relative; transition: border-color .2s; min-height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.sep-upload-zone:hover { border-color: #2563eb; }
+.sep-upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.sep-upload-zone img { max-width: 100%; max-height: 70px; display: none; border-radius: 4px; }
+.sep-ph { font-size: 12px; color: #94a3b8; }
+.sep-canvas-wrap { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff; touch-action: none; }
+.sep-canvas { width: 100%; height: 100px; display: block; cursor: crosshair; }
+.sep-btn { display: block; width: 100%; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; margin-top: 6px; font-family: inherit; }
+.sep-btn-primary { background: #2563eb; color: #fff; }
+.sep-btn-danger { background: #fee2e2; color: #dc2626; }
+.sep-btn-secondary { background: #f1f5f9; color: #475569; }
+</style>
+<button class="sep-toggle" onclick="sepToggle()">✏️ تخصيص الختم والتوقيع</button>
+<div class="sep-panel" id="sepPanel">
+    <div class="sep-topbar"><span>✏️ الختم والتوقيع</span><button class="sep-topbar-close" onclick="sepToggle()">✕</button></div>
+    <div class="sep-section">
+        <div class="sep-section-title">ختم المؤسسة</div>
+        <div class="sep-upload-zone"><input type="file" accept="image/png,image/jpeg,image/webp" onchange="sepHandleStamp(event)"><div class="sep-ph" id="sepStampPh">📎 انقر لرفع صورة الختم</div><img id="sepStampEditorImg"></div>
+        <button class="sep-btn sep-btn-danger" id="sepRemoveStampBtn" style="display:none" onclick="sepRemoveStamp()">✕ إزالة الختم</button>
+    </div>
+    <div class="sep-section">
+        <div class="sep-section-title">توقيع المؤسسة (حبر أزرق)</div>
+        <div class="sep-canvas-wrap"><canvas class="sep-canvas" id="sepSigCanvas"></canvas></div>
+        <button class="sep-btn sep-btn-secondary" onclick="if(sepSigPad)sepSigPad.clear()">مسح التوقيع</button>
+        <button class="sep-btn sep-btn-primary" onclick="sepApplySig()">✓ تطبيق التوقيع</button>
+    </div>
+</div>
+<script>
+const SEP_KEY = 'sep_contract'; let sepSigPad;
+function sepToggle() { document.getElementById('sepPanel').classList.toggle('open'); }
+function sepInitCanvas() { const c = document.getElementById('sepSigCanvas'), dpr = window.devicePixelRatio || 1; c.width = c.offsetWidth * dpr; c.height = 100 * dpr; c.getContext('2d').scale(dpr, dpr); sepSigPad = new SignaturePad(c, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 }); }
+function sepHandleStamp(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(ev) { const src = ev.target.result; const img = document.getElementById('sepStampEditorImg'); img.src = src; img.style.display = 'block'; document.getElementById('sepStampPh').style.display = 'none'; document.getElementById('sepRemoveStampBtn').style.display = 'block'; sepShowInDoc('docStampImg', src); sepSave({ stamp: src }); }; reader.readAsDataURL(file); }
+function sepRemoveStamp() { const img = document.getElementById('sepStampEditorImg'); img.src = ''; img.style.display = 'none'; document.getElementById('sepStampPh').style.display = 'block'; document.getElementById('sepRemoveStampBtn').style.display = 'none'; sepShowInDoc('docStampImg', null); sepSave({ stamp: null }); }
+function sepApplySig() { if (!sepSigPad || sepSigPad.isEmpty()) { alert('ارسم التوقيع أولاً'); return; } const src = sepSigPad.toDataURL('image/png'); sepShowInDoc('docSigImg', src); sepSave({ signature: src }); sepToggle(); }
+function sepShowInDoc(id, src) { const el = document.getElementById(id); if (!el) return; if (src) { el.src = src; el.style.display = 'inline-block'; } else { el.src = ''; el.style.display = 'none'; } }
+function sepSave(updates) { try { const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}'); Object.assign(data, updates); if (updates.stamp === null) delete data.stamp; if (updates.signature === null) delete data.signature; localStorage.setItem(SEP_KEY, JSON.stringify(data)); } catch(e) {} }
+function sepLoad() { try { const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}'); if (data.stamp) { const img = document.getElementById('sepStampEditorImg'); img.src = data.stamp; img.style.display = 'block'; document.getElementById('sepStampPh').style.display = 'none'; document.getElementById('sepRemoveStampBtn').style.display = 'block'; sepShowInDoc('docStampImg', data.stamp); } if (data.signature) { sepShowInDoc('docSigImg', data.signature); } } catch(e) {} }
+window.addEventListener('load', function() { sepInitCanvas(); sepLoad(); });
+</script>
 
 </body>
 </html>
