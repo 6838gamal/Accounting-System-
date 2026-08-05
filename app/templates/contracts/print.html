@@ -179,10 +179,16 @@
         }
 
         .sig-box .sig-placeholder {
-            min-height: 72px;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 6px;
+            margin: 4px 0 8px;
+            color: #cbd5e1;
+            font-size: 11px;
+            letter-spacing: 0.3px;
         }
 
         .sig-box .sig-placeholder img {
@@ -346,7 +352,7 @@
             <!-- يسار: توقيع العميل -->
             <div class="sig-box">
                 <div class="sig-label">توقيع العميل (الطرف الثاني)</div>
-                <div class="sig-placeholder"></div>
+                <div class="sig-placeholder">مكان التوقيع</div>
                 <div class="sig-line">{{ contract.client.name if contract.client else '' }}</div>
             </div>
         </div>
