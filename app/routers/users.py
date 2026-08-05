@@ -82,11 +82,11 @@ async def new_user(request: Request):
 async def create_user(
     request: Request,
     db: Session = Depends(get_db),
-    username: str = Form(..., min_length=3, max_length=50),
-    email: str = Form(..., max_length=100),
-    full_name: str = Form(..., max_length=100),
-    role: str = Form("accountant"),
-    password: str = Form(...),
+    username: str = Form(default=""),
+    email: str = Form(default=""),
+    full_name: str = Form(default=""),
+    role: str = Form(default="accountant"),
+    password: str = Form(default=""),
 ):
     admin_id = _require_admin(request)
     if not admin_id:
@@ -109,6 +109,19 @@ async def create_user(
                 },
             },
         )
+
+    # Manual validation (keeps form context on error)
+    import re as _re
+    if not username or len(username) < 3:
+        return form_error("اسم المستخدم يجب أن يكون 3 أحرف على الأقل")
+    if len(username) > 50 or not _re.fullmatch(r'[a-zA-Z0-9_]+', username):
+        return form_error("اسم المستخدم: حروف إنجليزية وأرقام وشرطة سفلية فقط (3-50 حرفاً)")
+    if not email or len(email) > 100:
+        return form_error("البريد الإلكتروني مطلوب (100 حرف كحد أقصى)")
+    if not full_name or len(full_name) > 100:
+        return form_error("الاسم الكامل مطلوب (100 حرف كحد أقصى)")
+    if not password:
+        return form_error("كلمة المرور مطلوبة")
 
     # Validate role
     valid_roles = [r.value for r in UserRole]
