@@ -219,7 +219,7 @@
         .doc-section-body { border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 6px 6px; padding: 14px; line-height: 1.8; color: #374151; white-space: pre-wrap; }
 
         /* ════════════════════════
-           SIGNATURES & STAMP LAYOUT (EDITOR)
+           قسم التوقيع في المحرر — الطرف الأول فقط (يمين)
         ════════════════════════ */
         .signatures-wrapper {
             margin-top: 32px;
@@ -227,15 +227,14 @@
             border-top: 1px dashed #cbd5e1;
         }
 
+        /* في المحرر: توقيع الطرف الأول فقط — محاذاة يمين */
         .signatures-row {
             display: flex;
-            gap: 30px;
-            justify-content: center;
+            justify-content: flex-end;
         }
 
         .sig-block {
-            flex: 1;
-            max-width: 280px;
+            width: 280px;
             text-align: center;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
@@ -262,42 +261,6 @@
             padding-top: 8px;
             font-size: 12px;
             color: #374151;
-        }
-
-        .stamp-wrapper {
-            display: flex;
-            justify-content: center;
-            margin-top: 12px;
-        }
-
-        .stamp-box {
-            text-align: center;
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 12px 24px;
-            background: #fafafa;
-            min-width: 140px;
-        }
-
-        .stamp-box .stamp-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-        }
-
-        .stamp-box .stamp-img {
-            max-width: 120px;
-            max-height: 70px;
-            object-fit: contain;
-        }
-
-        .stamp-box .stamp-sub {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-top: 4px;
         }
 
         /* ════════════════════════
@@ -463,3 +426,466 @@
             .btn-print-main { display: none; }
             .editor-layout {
                 flex-direction: column;
+                overflow: hidden;
+            }
+            .controls-panel {
+                width: 100%;
+                min-width: unset;
+                border-left: none;
+                border-bottom: 1px solid #e2e8f0;
+                max-height: 40vh;
+                overflow-y: auto;
+            }
+            .preview-area { padding: 16px 8px 32px; }
+            .a4-page { width: 100%; min-width: 320px; padding: 24px 20px; font-size: 11px; }
+            .fab-print { display: flex; }
+            .preview-divider { display: block; }
+        }
+
+        @media print {
+            .topbar, .controls-panel, .fab-print, .preview-divider { display: none !important; }
+            body { overflow: auto; height: auto; background: #fff; }
+            .editor-layout { margin-top: 0; height: auto; }
+            .preview-area { padding: 0; background: #fff; }
+            .a4-page { box-shadow: none; border-radius: 0; width: 100%; min-height: auto; }
+        }
+    </style>
+</head>
+<body data-template="modern">
+
+<!-- ════ شريط الأدوات ════ -->
+<div class="topbar">
+    <a href="/contracts/{{ contract.id }}" class="btn-topbar btn-back">
+        <i class="bi bi-arrow-right"></i> رجوع
+    </a>
+    <div class="topbar-title">
+        محرر العقد <span>{{ contract.contract_number }}</span>
+    </div>
+    <button class="btn-topbar btn-print-main" onclick="window.print()">
+        <i class="bi bi-printer"></i> طباعة
+    </button>
+</div>
+
+<!-- ════ تخطيط المحرر ════ -->
+<div class="editor-layout">
+
+    <!-- ════ لوحة التحكم ════ -->
+    <div class="controls-panel">
+
+        <!-- الشعار -->
+        <div class="panel-section">
+            <div class="panel-section-title"><i class="bi bi-image"></i> شعار الشركة</div>
+            <div class="logo-upload-zone" id="logoZone">
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" onchange="handleLogoUpload(event)">
+                <div id="logoPlaceholder" class="logo-placeholder">
+                    <i class="bi bi-cloud-upload"></i>
+                    انقر لرفع الشعار
+                </div>
+                <img id="logoPreviewCtrl" class="logo-preview" style="display:none;">
+            </div>
+            <button id="btnRemoveLogo" class="btn-remove-logo" style="display:none;" onclick="removeLogo()">
+                <i class="bi bi-x-circle"></i> إزالة الشعار
+            </button>
+        </div>
+
+        <!-- القالب -->
+        <div class="panel-section">
+            <div class="panel-section-title"><i class="bi bi-layout-text-window"></i> قالب التصميم</div>
+            <div class="template-grid" id="templateGrid">
+                <div class="template-card active" data-tpl="modern" onclick="setTemplate('modern')">
+                    <div class="tpl-preview" style="background:#f8fafc;">
+                        <div style="height:8px;background:#2563eb;"></div>
+                        <div style="flex:1;padding:3px 4px;display:flex;flex-direction:column;gap:2px;">
+                            <div style="height:4px;background:#e2e8f0;border-radius:1px;width:60%;"></div>
+                            <div style="height:3px;background:#e2e8f0;border-radius:1px;width:80%;"></div>
+                        </div>
+                    </div>
+                    <div class="tpl-name">حديث</div>
+                </div>
+                <div class="template-card" data-tpl="classic" onclick="setTemplate('classic')">
+                    <div class="tpl-preview" style="background:#f0f4ff;">
+                        <div style="height:8px;background:#2563eb;"></div>
+                        <div style="flex:1;padding:3px 4px;display:flex;flex-direction:column;gap:2px;">
+                            <div style="height:4px;background:#bfdbfe;border-radius:1px;width:70%;"></div>
+                            <div style="height:3px;background:#dbeafe;border-radius:1px;width:50%;"></div>
+                        </div>
+                    </div>
+                    <div class="tpl-name">كلاسيك</div>
+                </div>
+                <div class="template-card" data-tpl="minimal" onclick="setTemplate('minimal')">
+                    <div class="tpl-preview" style="background:#fff;">
+                        <div style="height:2px;background:#e2e8f0;"></div>
+                        <div style="flex:1;padding:3px 4px;display:flex;flex-direction:column;gap:2px;">
+                            <div style="height:4px;background:#f1f5f9;border-radius:1px;width:60%;"></div>
+                            <div style="height:3px;background:#f1f5f9;border-radius:1px;width:90%;"></div>
+                        </div>
+                    </div>
+                    <div class="tpl-name">بسيط</div>
+                </div>
+                <div class="template-card" data-tpl="formal" onclick="setTemplate('formal')">
+                    <div class="tpl-preview" style="background:#fff;">
+                        <div style="height:12px;background:#1e293b;"></div>
+                        <div style="height:3px;background:#2563eb;"></div>
+                        <div style="flex:1;padding:3px 4px;"></div>
+                    </div>
+                    <div class="tpl-name">رسمي</div>
+                </div>
+                <div class="template-card" data-tpl="elegant" onclick="setTemplate('elegant')">
+                    <div class="tpl-preview" style="background:#fff;">
+                        <div style="flex:1;padding:4px;text-align:center;">
+                            <div style="height:4px;background:#e2e8f0;border-radius:1px;width:50%;margin:0 auto 3px;"></div>
+                            <div style="height:2px;background:linear-gradient(to left,transparent,#2563eb,transparent);"></div>
+                        </div>
+                    </div>
+                    <div class="tpl-name">أنيق</div>
+                </div>
+                <div class="template-card" data-tpl="striped" onclick="setTemplate('striped')">
+                    <div class="tpl-preview" style="background:#fff;">
+                        <div style="height:8px;background:#2563eb;"></div>
+                        <div style="flex:1;padding:3px 4px;display:flex;flex-direction:column;gap:2px;">
+                            <div style="height:4px;background:#f8fafc;border-radius:1px;width:100%;"></div>
+                            <div style="height:4px;background:#e2e8f0;border-radius:1px;width:100%;"></div>
+                        </div>
+                    </div>
+                    <div class="tpl-name">مخطط</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- اللون الرئيسي -->
+        <div class="panel-section">
+            <div class="panel-section-title"><i class="bi bi-palette"></i> اللون الرئيسي</div>
+            <div class="color-row">
+                <div class="color-swatch-list">
+                    <div class="color-swatch active" style="background:#2563eb;" data-color="#2563eb" onclick="setColor('#2563eb', this)"></div>
+                    <div class="color-swatch" style="background:#16a34a;" data-color="#16a34a" onclick="setColor('#16a34a', this)"></div>
+                    <div class="color-swatch" style="background:#dc2626;" data-color="#dc2626" onclick="setColor('#dc2626', this)"></div>
+                    <div class="color-swatch" style="background:#9333ea;" data-color="#9333ea" onclick="setColor('#9333ea', this)"></div>
+                    <div class="color-swatch" style="background:#0891b2;" data-color="#0891b2" onclick="setColor('#0891b2', this)"></div>
+                    <div class="color-swatch" style="background:#ea580c;" data-color="#ea580c" onclick="setColor('#ea580c', this)"></div>
+                    <div class="color-swatch" style="background:#1e293b;" data-color="#1e293b" onclick="setColor('#1e293b', this)"></div>
+                </div>
+                <input type="color" class="custom-color" value="#2563eb" oninput="setColor(this.value, null)" title="لون مخصص">
+            </div>
+        </div>
+
+        <!-- حجم الخط -->
+        <div class="panel-section">
+            <div class="panel-section-title"><i class="bi bi-type"></i> حجم الخط</div>
+            <label class="form-label-sm">حجم الخط الأساسي</label>
+            <select class="form-select form-select-sm" onchange="setFontSize(this.value)">
+                <option value="12px">صغير — 12pt</option>
+                <option value="13px" selected>متوسط — 13pt</option>
+                <option value="14px">كبير — 14pt</option>
+                <option value="15px">أكبر — 15pt</option>
+            </select>
+        </div>
+
+        <!-- علامة مائية -->
+        <div class="panel-section">
+            <div class="panel-section-title"><i class="bi bi-droplet"></i> علامة مائية</div>
+            <label class="form-label-sm">نص العلامة المائية (اختياري)</label>
+            <input type="text" class="form-control form-control-sm" placeholder="مثال: نسخة طباعة" oninput="setWatermark(this.value)" maxlength="30">
+        </div>
+
+        <!-- توقيع الطرف الأول -->
+        <div class="panel-section">
+            <div class="panel-section-title"><i class="bi bi-pen"></i> توقيع الطرف الأول</div>
+            <div class="sig-pad-wrap">
+                <div class="sig-pad-label">
+                    <span>ارسم التوقيع هنا</span>
+                    <button onclick="clearSig()">مسح</button>
+                </div>
+                <canvas class="sig-canvas" id="sigCanvas"></canvas>
+            </div>
+            <button onclick="applySig()" style="width:100%;margin-top:8px;padding:7px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+                <i class="bi bi-check2"></i> تطبيق التوقيع
+            </button>
+        </div>
+
+    </div><!-- /controls-panel -->
+
+    <!-- ════ منطقة المعاينة ════ -->
+    <div class="preview-area">
+        <div class="a4-wrapper">
+            <div class="a4-page" id="a4Page">
+
+                <!-- العلامة المائية -->
+                <div id="watermarkEl" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;opacity:0.07;font-size:64px;font-weight:900;color:#1e293b;transform:rotate(-25deg);white-space:nowrap;overflow:hidden;"></div>
+
+                <!-- ── الترويسة ── -->
+                <div class="doc-header">
+                    <div class="company-block">
+                        <img id="logoPreviewDoc" class="company-logo" style="display:none;">
+                        <div class="company-name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+                        <div class="company-sub">
+                            {% if settings.get('company_address') %}{{ settings.get('company_address') }}<br>{% endif %}
+                            {% if settings.get('company_phone') %}هاتف: {{ settings.get('company_phone') }}<br>{% endif %}
+                            {% if settings.get('company_email') %}{{ settings.get('company_email') }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="doc-meta">
+                        <div class="doc-number">{{ contract.contract_number }}</div>
+                        <div class="doc-date">
+                            تاريخ الإنشاء: {{ contract.created_at.strftime('%Y-%m-%d') }}<br>
+                            البداية: {{ contract.start_date or '—' }}<br>
+                            النهاية: {{ contract.end_date or '—' }}
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="header-divider">
+
+                <!-- ── عنوان العقد ── -->
+                <div class="contract-title-block">{{ contract.title }}</div>
+
+                <!-- ── أطراف العقد ── -->
+                <div class="parties-row">
+                    <div class="party-box">
+                        <div class="party-label">الطرف الأول</div>
+                        <div class="party-name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
+                        {% if settings.get('company_tax_number') %}
+                        <div class="party-sub">الرقم الضريبي: {{ settings.get('company_tax_number') }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="party-box">
+                        <div class="party-label">الطرف الثاني (العميل)</div>
+                        <div class="party-name">{{ contract.client.name if contract.client else '—' }}</div>
+                        {% if contract.client and contract.client.phone %}
+                        <div class="party-sub">{{ contract.client.phone }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ── تفاصيل العقد ── -->
+                <table class="details-table">
+                    <tr>
+                        <th>قيمة العقد</th>
+                        <td style="font-size:15px;font-weight:700;color:var(--primary,#2563eb);">
+                            {{ "{:,.2f}".format(contract.amount) }} {{ settings.get('currency', 'SAR') }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>تاريخ البداية</th>
+                        <td>{{ contract.start_date or '—' }}</td>
+                    </tr>
+                    <tr>
+                        <th>تاريخ النهاية</th>
+                        <td>{{ contract.end_date or '—' }}</td>
+                    </tr>
+                    <tr>
+                        <th>الحالة</th>
+                        <td>{{ {'draft':'مسودة','active':'نشط','expired':'منتهي','cancelled':'ملغي'}.get(contract.status.value, contract.status.value) }}</td>
+                    </tr>
+                </table>
+
+                <!-- ── الوصف ── -->
+                {% if contract.description %}
+                <div class="doc-section">
+                    <div class="doc-section-title">الوصف / نطاق العمل</div>
+                    <div class="doc-section-body">{{ contract.description }}</div>
+                </div>
+                {% endif %}
+
+                <!-- ── الملاحظات ── -->
+                {% if contract.notes %}
+                <div class="doc-section">
+                    <div class="doc-section-title">ملاحظات</div>
+                    <div class="doc-section-body">{{ contract.notes }}</div>
+                </div>
+                {% endif %}
+
+                <!-- ════════════════════════════════════════
+                     التوقيعات في المحرر:
+                     توقيع الطرف الأول فقط — يمين
+                ════════════════════════════════════════ -->
+                <div class="signatures-wrapper">
+                    <div class="signatures-row">
+                        <!-- يمين: توقيع الطرف الأول فقط -->
+                        <div class="sig-block">
+                            <div class="sig-title">توقيع الطرف الأول وختمه</div>
+                            <img id="docSigImg" class="sig-img" style="display:none;">
+                            <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /a4-page -->
+        </div><!-- /a4-wrapper -->
+    </div><!-- /preview-area -->
+
+</div><!-- /editor-layout -->
+
+<!-- زر الطباعة العائم (موبايل) -->
+<button class="fab-print" onclick="window.print()" title="طباعة">
+    <i class="bi bi-printer"></i>
+</button>
+
+<!-- ════ JavaScript ════ -->
+<script>
+const STORE_KEY = 'editor_contract_{{ contract.id }}';
+let sigPad = null;
+let currentColor = '#2563eb';
+
+/* ── تهيئة ── */
+window.addEventListener('DOMContentLoaded', function () {
+    initSigPad();
+    loadState();
+    applyPrimary(currentColor);
+});
+
+/* ── لوحة التوقيع ── */
+function initSigPad() {
+    const canvas = document.getElementById('sigCanvas');
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = canvas.offsetWidth  * dpr;
+    canvas.height = 88 * dpr;
+    canvas.getContext('2d').scale(dpr, dpr);
+    sigPad = new SignaturePad(canvas, {
+        penColor: '#0055cc',
+        minWidth: 1,
+        maxWidth: 2.5,
+    });
+}
+
+function clearSig() { if (sigPad) sigPad.clear(); }
+
+function applySig() {
+    if (!sigPad || sigPad.isEmpty()) { alert('ارسم التوقيع أولاً'); return; }
+    const src = sigPad.toDataURL('image/png');
+    showDocImg('docSigImg', src);
+    saveState({ signature: src });
+}
+
+/* ── الشعار ── */
+function handleLogoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+        const src = ev.target.result;
+        showLogo(src);
+        saveState({ logo: src });
+    };
+    reader.readAsDataURL(file);
+}
+
+function showLogo(src) {
+    const ctrl = document.getElementById('logoPreviewCtrl');
+    const doc  = document.getElementById('logoPreviewDoc');
+    const ph   = document.getElementById('logoPlaceholder');
+    const btn  = document.getElementById('btnRemoveLogo');
+    ctrl.src = doc.src = src;
+    ctrl.style.display = doc.style.display = 'inline-block';
+    ph.style.display = 'none';
+    btn.style.display = 'inline-block';
+}
+
+function removeLogo() {
+    const ctrl = document.getElementById('logoPreviewCtrl');
+    const doc  = document.getElementById('logoPreviewDoc');
+    const ph   = document.getElementById('logoPlaceholder');
+    const btn  = document.getElementById('btnRemoveLogo');
+    ctrl.src = doc.src = '';
+    ctrl.style.display = doc.style.display = 'none';
+    ph.style.display = 'block';
+    btn.style.display = 'none';
+    saveState({ logo: null });
+}
+
+/* ── القالب ── */
+function setTemplate(tpl) {
+    document.body.dataset.template = tpl;
+    document.querySelectorAll('.template-card').forEach(c => {
+        c.classList.toggle('active', c.dataset.tpl === tpl);
+    });
+    saveState({ template: tpl });
+}
+
+/* ── اللون ── */
+function setColor(hex, el) {
+    currentColor = hex;
+    applyPrimary(hex);
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    if (el) el.classList.add('active');
+    saveState({ color: hex });
+}
+
+function applyPrimary(hex) {
+    document.body.style.setProperty('--primary', hex);
+    // حساب نسخة فاتحة (20% opacity)
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    document.body.style.setProperty('--primary-20', `rgba(${r},${g},${b},0.2)`);
+}
+
+/* ── حجم الخط ── */
+function setFontSize(size) {
+    document.getElementById('a4Page').style.fontSize = size;
+    saveState({ fontSize: size });
+}
+
+/* ── العلامة المائية ── */
+function setWatermark(text) {
+    const el = document.getElementById('watermarkEl');
+    if (text && text.trim()) {
+        el.textContent = text.trim();
+        el.style.display = 'flex';
+    } else {
+        el.style.display = 'none';
+    }
+    saveState({ watermark: text });
+}
+
+/* ── عرض صورة في المستند ── */
+function showDocImg(id, src) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (src) { el.src = src; el.style.display = 'inline-block'; }
+    else      { el.src = ''; el.style.display = 'none'; }
+}
+
+/* ── حفظ واسترجاع الحالة ── */
+function saveState(updates) {
+    try {
+        const data = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+        Object.assign(data, updates);
+        if (updates.logo === null)      delete data.logo;
+        if (updates.signature === null) delete data.signature;
+        localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    } catch(e) {}
+}
+
+function loadState() {
+    try {
+        const data = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+
+        if (data.template) setTemplate(data.template);
+        if (data.color) {
+            currentColor = data.color;
+            applyPrimary(data.color);
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.toggle('active', s.dataset.color === data.color);
+            });
+            const customPicker = document.querySelector('input[type=color].custom-color');
+            if (customPicker) customPicker.value = data.color;
+        }
+        if (data.fontSize) {
+            document.getElementById('a4Page').style.fontSize = data.fontSize;
+            const sel = document.querySelector('select[onchange*="setFontSize"]');
+            if (sel) sel.value = data.fontSize;
+        }
+        if (data.watermark) {
+            setWatermark(data.watermark);
+            const wmInput = document.querySelector('input[oninput*="setWatermark"]');
+            if (wmInput) wmInput.value = data.watermark;
+        }
+        if (data.logo)      showLogo(data.logo);
+        if (data.signature) showDocImg('docSigImg', data.signature);
+    } catch(e) {}
+}
+</script>
+
+</body>
+</html>

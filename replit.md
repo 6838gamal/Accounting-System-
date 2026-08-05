@@ -1,62 +1,48 @@
 # نظام المحاسبة السحابي
 
-نظام محاسبي ويب احترافي مبني بـ FastAPI و SQLAlchemy و Bootstrap 5، مع دعم كامل للغة العربية.
+A cloud-based Arabic accounting system built with FastAPI, SQLAlchemy, and Bootstrap 5.
 
-## تشغيل التطبيق
+## Stack
+
+- **Backend**: Python 3.12 + FastAPI + SQLAlchemy 2.x
+- **Templates**: Jinja2 + Bootstrap 5 (RTL/Arabic)
+- **Database**: SQLite (`accounting.db`) with Alembic migrations
+- **Auth**: Session-based (itsdangerous)
+- **PDF**: ReportLab / xhtml2pdf / WeasyPrint
+- **Excel**: OpenPyXL
+- **Charts**: Chart.js
+
+## How to run
 
 ```bash
 python main.py
 ```
 
-التطبيق يعمل على المنفذ **5000**.  
-بيانات الدخول الافتراضية: `admin` / `admin123`
+App runs on port 5000. Default login: **admin / admin123**
 
-## الإعداد الأولي (مرة واحدة)
+## Environment variables required
 
-```bash
-pip install -r requirements.txt
-python -c "from app.database import Base, engine; Base.metadata.create_all(bind=engine)"
-python -c "from app.database import SessionLocal; from app.services.settings_service import SettingsService; db=SessionLocal(); SettingsService(db).init_defaults(); db.close()"
-```
+| Variable | Description |
+|---|---|
+| `SECRET_KEY` | App HMAC secret (auto-generated for dev) |
+| `SESSION_SECRET` | Session signing key (≥32 chars) |
 
-## المكدس التقني
+## Key routes
 
-| المكون | التقنية |
-|--------|---------|
-| Backend | Python 3.13 + FastAPI |
-| Templates | Jinja2 + Bootstrap 5 |
-| Database | SQLite + SQLAlchemy 2.x |
-| Auth | Session-based (itsdangerous) |
-| PDF | ReportLab + WeasyPrint |
-| Arabic | arabic-reshaper + python-bidi |
-| Charts | Chart.js |
+- `/` → dashboard
+- `/contracts` → contract list
+- `/contracts/{id}` → contract detail
+- `/contracts/{id}/print` → print view (right sig + left sig + stamp centre)
+- `/contracts/{id}/layout-editor` → layout editor (company signature only, right-aligned)
+- `/contracts/{id}/pdf` → download PDF
 
-## هيكل المشروع
+## Contract signature layout
 
-```
-app/
-├── models/         نماذج قاعدة البيانات
-├── routers/        مسارات API والصفحات
-├── schemas/        مخططات Pydantic
-├── services/       منطق الأعمال
-├── templates/      قوالب HTML (Jinja2)
-│   └── contracts/  قوالب العقود (list, form, detail, layout_editor)
-└── static/         CSS / JS / خطوط
-```
-
-## الميزات الرئيسية
-
-- لوحة تحكم مع رسوم بيانية
-- إدارة العملاء والعقود والفواتير وعروض الأسعار
-- تتبع المدفوعات والمصروفات
-- تقارير مع تصدير PDF و Excel
-- **محرر تخطيط العقود قبل الطباعة** (layout editor) — `/contracts/{id}/layout-editor`
-  - رفع وتعديل الشعار
-  - ثلاثة قوالب تصميم (عصري / كلاسيكي / مبسط)
-  - اختيار الألوان
-  - لوح توقيع رقمي لطرفَي العقد
-  - معاينة A4 لحظية وطباعة مباشرة
+- **Print / طباعة**: Three-part footer — company signature (right), client signature (left), stamp (centre).
+- **Layout editor / محرر**: Only the company (first-party) signature shown, right-aligned. Stamp not shown in editor.
+- **PDF**: Controlled by `show_signatures` flag; two-column signature table in `app/templates/pdf/contract.html`.
 
 ## User preferences
 
-- المستخدم يريد محرر تخطيط (layout editor) للعقود قبل الطباعة بدل الطباعة المباشرة.
+- Keep existing project structure — do not restructure or migrate.
+- Arabic RTL layout throughout.
