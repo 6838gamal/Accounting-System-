@@ -83,6 +83,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         h["X-XSS-Protection"] = "1; mode=block"
         h["Server"] = "AccountingSystem"
 
+        # منع المتصفح من تخزين صفحات HTML — يضمن إعادة التحقق من الجلسة
+        # عند الضغط على "رجوع" بعد تسجيل الخروج
+        content_type = response.headers.get("content-type", "")
+        is_static = request.url.path.startswith("/static/")
+        if not is_static and "text/html" in content_type:
+            h["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            h["Pragma"] = "no-cache"
+            h["Expires"] = "0"
+
         if self.is_production:
             h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
