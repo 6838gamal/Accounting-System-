@@ -408,15 +408,83 @@
     </div>
 </div>
 <script>
-const SEP_KEY = 'sep_contract'; let sepSigPad;
+// مفتاح localStorage مشترك مع المحرر — يقرأ التوقيع والختم منه مباشرة
+const SEP_KEY = 'editor_contract_{{ contract.id }}';
+let sepSigPad;
+
 function sepToggle() { document.getElementById('sepPanel').classList.toggle('open'); }
-function sepInitCanvas() { const c = document.getElementById('sepSigCanvas'), dpr = window.devicePixelRatio || 1; c.width = c.offsetWidth * dpr; c.height = 100 * dpr; c.getContext('2d').scale(dpr, dpr); sepSigPad = new SignaturePad(c, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 }); }
-function sepHandleStamp(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(ev) { const src = ev.target.result; const img = document.getElementById('sepStampEditorImg'); img.src = src; img.style.display = 'block'; document.getElementById('sepStampPh').style.display = 'none'; document.getElementById('sepRemoveStampBtn').style.display = 'block'; sepShowInDoc('docStampImg', src); sepSave({ stamp: src }); }; reader.readAsDataURL(file); }
-function sepRemoveStamp() { const img = document.getElementById('sepStampEditorImg'); img.src = ''; img.style.display = 'none'; document.getElementById('sepStampPh').style.display = 'block'; document.getElementById('sepRemoveStampBtn').style.display = 'none'; sepShowInDoc('docStampImg', null); sepSave({ stamp: null }); }
-function sepApplySig() { if (!sepSigPad || sepSigPad.isEmpty()) { alert('ارسم التوقيع أولاً'); return; } const src = sepSigPad.toDataURL('image/png'); sepShowInDoc('docSigImg', src); sepSave({ signature: src }); sepToggle(); }
-function sepShowInDoc(id, src) { const el = document.getElementById(id); if (!el) return; if (src) { el.src = src; el.style.display = 'inline-block'; } else { el.src = ''; el.style.display = 'none'; } }
-function sepSave(updates) { try { const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}'); Object.assign(data, updates); if (updates.stamp === null) delete data.stamp; if (updates.signature === null) delete data.signature; localStorage.setItem(SEP_KEY, JSON.stringify(data)); } catch(e) {} }
-function sepLoad() { try { const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}'); if (data.stamp) { const img = document.getElementById('sepStampEditorImg'); img.src = data.stamp; img.style.display = 'block'; document.getElementById('sepStampPh').style.display = 'none'; document.getElementById('sepRemoveStampBtn').style.display = 'block'; sepShowInDoc('docStampImg', data.stamp); } if (data.signature) { sepShowInDoc('docSigImg', data.signature); } } catch(e) {} }
+
+function sepInitCanvas() {
+    const c = document.getElementById('sepSigCanvas'), dpr = window.devicePixelRatio || 1;
+    c.width = c.offsetWidth * dpr; c.height = 100 * dpr;
+    c.getContext('2d').scale(dpr, dpr);
+    sepSigPad = new SignaturePad(c, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 });
+}
+
+function sepHandleStamp(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const src = ev.target.result;
+        const img = document.getElementById('sepStampEditorImg');
+        img.src = src; img.style.display = 'block';
+        document.getElementById('sepStampPh').style.display = 'none';
+        document.getElementById('sepRemoveStampBtn').style.display = 'block';
+        sepShowInDoc('docStampImg', src);
+        sepSave({ stamp: src });
+    };
+    reader.readAsDataURL(file);
+}
+
+function sepRemoveStamp() {
+    const img = document.getElementById('sepStampEditorImg');
+    img.src = ''; img.style.display = 'none';
+    document.getElementById('sepStampPh').style.display = 'block';
+    document.getElementById('sepRemoveStampBtn').style.display = 'none';
+    sepShowInDoc('docStampImg', null);
+    sepSave({ stamp: null });
+}
+
+function sepApplySig() {
+    if (!sepSigPad || sepSigPad.isEmpty()) { alert('ارسم التوقيع أولاً'); return; }
+    const src = sepSigPad.toDataURL('image/png');
+    sepShowInDoc('docSigImg', src);
+    sepSave({ signature: src });
+    sepToggle();
+}
+
+function sepShowInDoc(id, src) {
+    const el = document.getElementById(id); if (!el) return;
+    if (src) { el.src = src; el.style.display = 'inline-block'; }
+    else     { el.src = ''; el.style.display = 'none'; }
+}
+
+function sepSave(updates) {
+    try {
+        const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}');
+        Object.assign(data, updates);
+        if (updates.stamp === null) delete data.stamp;
+        if (updates.signature === null) delete data.signature;
+        localStorage.setItem(SEP_KEY, JSON.stringify(data));
+    } catch(e) {}
+}
+
+function sepLoad() {
+    try {
+        const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}');
+        // تحميل الختم
+        if (data.stamp) {
+            const img = document.getElementById('sepStampEditorImg');
+            img.src = data.stamp; img.style.display = 'block';
+            document.getElementById('sepStampPh').style.display = 'none';
+            document.getElementById('sepRemoveStampBtn').style.display = 'block';
+            sepShowInDoc('docStampImg', data.stamp);
+        }
+        // تحميل التوقيع
+        if (data.signature) { sepShowInDoc('docSigImg', data.signature); }
+    } catch(e) {}
+}
+
 window.addEventListener('load', function() { sepInitCanvas(); sepLoad(); });
 </script>
 

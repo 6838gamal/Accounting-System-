@@ -263,6 +263,36 @@
             color: #374151;
         }
 
+        .stamp-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .stamp-box {
+            text-align: center;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 12px 24px;
+            background: #fafafa;
+            min-width: 140px;
+        }
+
+        .stamp-box .stamp-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stamp-box .stamp-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
         /* ════════════════════════
            TEMPLATE THEMES
         ════════════════════════ */
@@ -588,6 +618,22 @@
             <input type="text" class="form-control form-control-sm" placeholder="مثال: نسخة طباعة" oninput="setWatermark(this.value)" maxlength="30">
         </div>
 
+        <!-- ختم المؤسسة -->
+        <div class="panel-section">
+            <div class="panel-section-title"><i class="bi bi-badge-hd"></i> ختم المؤسسة</div>
+            <div class="logo-upload-zone" id="stampZone">
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onchange="handleStampUpload(event)">
+                <div id="stampPlaceholder" class="logo-placeholder">
+                    <i class="bi bi-cloud-upload"></i>
+                    انقر لرفع صورة الختم
+                </div>
+                <img id="stampPreviewCtrl" class="logo-preview" style="display:none;">
+            </div>
+            <button id="btnRemoveStamp" class="btn-remove-logo" style="display:none;" onclick="removeStamp()">
+                <i class="bi bi-x-circle"></i> إزالة الختم
+            </button>
+        </div>
+
         <!-- توقيع الطرف الأول -->
         <div class="panel-section">
             <div class="panel-section-title"><i class="bi bi-pen"></i> توقيع الطرف الأول</div>
@@ -698,6 +744,7 @@
                 <!-- ════════════════════════════════════════
                      التوقيعات في المحرر:
                      توقيع الطرف الأول فقط — يمين
+                     الختم أسفل المنتصف
                 ════════════════════════════════════════ -->
                 <div class="signatures-wrapper">
                     <div class="signatures-row">
@@ -706,6 +753,14 @@
                             <div class="sig-title">توقيع الطرف الأول وختمه</div>
                             <img id="docSigImg" class="sig-img" style="display:none;">
                             <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+                        </div>
+                    </div>
+                    <!-- الختم في المنتصف أسفل -->
+                    <div class="stamp-wrapper">
+                        <div class="stamp-box">
+                            <div class="stamp-label">ختم المؤسسة</div>
+                            <img id="docStampImg" style="max-width:120px;max-height:70px;object-fit:contain;display:none;">
+                            <div class="stamp-sub" id="stampSubText">{{ settings.get('company_name', '') }}</div>
                         </div>
                     </div>
                 </div>
@@ -755,6 +810,46 @@ function applySig() {
     const src = sigPad.toDataURL('image/png');
     showDocImg('docSigImg', src);
     saveState({ signature: src });
+}
+
+/* ── الختم ── */
+function handleStampUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+        const src = ev.target.result;
+        showStamp(src);
+        saveState({ stamp: src });
+    };
+    reader.readAsDataURL(file);
+}
+
+function showStamp(src) {
+    const ctrl = document.getElementById('stampPreviewCtrl');
+    const doc  = document.getElementById('docStampImg');
+    const ph   = document.getElementById('stampPlaceholder');
+    const btn  = document.getElementById('btnRemoveStamp');
+    const sub  = document.getElementById('stampSubText');
+    ctrl.src = src; ctrl.style.display = 'inline-block';
+    if (doc) { doc.src = src; doc.style.display = 'inline-block'; }
+    ph.style.display = 'none';
+    btn.style.display = 'inline-block';
+    if (sub) sub.style.display = 'none';
+}
+
+function removeStamp() {
+    const ctrl = document.getElementById('stampPreviewCtrl');
+    const doc  = document.getElementById('docStampImg');
+    const ph   = document.getElementById('stampPlaceholder');
+    const btn  = document.getElementById('btnRemoveStamp');
+    const sub  = document.getElementById('stampSubText');
+    ctrl.src = ''; ctrl.style.display = 'none';
+    if (doc) { doc.src = ''; doc.style.display = 'none'; }
+    ph.style.display = 'block';
+    btn.style.display = 'none';
+    if (sub) sub.style.display = 'block';
+    saveState({ stamp: null });
 }
 
 /* ── الشعار ── */
@@ -882,6 +977,7 @@ function loadState() {
             if (wmInput) wmInput.value = data.watermark;
         }
         if (data.logo)      showLogo(data.logo);
+        if (data.stamp)     showStamp(data.stamp);
         if (data.signature) showDocImg('docSigImg', data.signature);
     } catch(e) {}
 }
