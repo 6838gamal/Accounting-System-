@@ -103,8 +103,13 @@ function removeItem(index) {
 function updateItem(index, field, value) {
     itemsData[index][field] = field === 'description' ? value : parseFloat(value) || 0;
     itemsData[index].total = itemsData[index].quantity * itemsData[index].unit_price;
-    renderItems();
-    calculateTotals();
+    // تحديث خلية الإجمالي فقط لهذا البند — لا إعادة رسم كاملة حتى لا يضيع تركيز الحقل على الجوال
+    const rows = document.querySelectorAll('#items-tbody tr');
+    if (rows[index]) {
+        const totalCell = rows[index].querySelector('.item-total');
+        if (totalCell) totalCell.textContent = formatNumber(itemsData[index].total);
+    }
+    updateItemsJson();
 }
 
 function renderItems() {
@@ -123,14 +128,16 @@ function renderItems() {
             <td style="width:90px;min-width:80px">
                 <input type="number" class="form-control form-control-sm"
                     value="${item.quantity}" min="0.01" step="0.01"
-                    oninput="updateItem(${i}, 'quantity', this.value)">
+                    inputmode="decimal"
+                    onchange="updateItem(${i}, 'quantity', this.value)">
             </td>
             <td style="width:130px;min-width:110px">
                 <input type="number" class="form-control form-control-sm"
                     value="${item.unit_price}" min="0" step="0.01"
-                    oninput="updateItem(${i}, 'unit_price', this.value)">
+                    inputmode="decimal"
+                    onchange="updateItem(${i}, 'unit_price', this.value)">
             </td>
-            <td style="width:120px;min-width:100px" class="text-end fw-semibold">
+            <td style="width:120px;min-width:100px" class="text-end fw-semibold item-total">
                 ${formatNumber((item.quantity || 0) * (item.unit_price || 0))}
             </td>
             <td style="width:46px;min-width:40px" class="text-center">

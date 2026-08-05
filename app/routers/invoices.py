@@ -43,11 +43,14 @@ async def new_invoice(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url="/auth/login", status_code=302)
     clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
     settings_svc = SettingsService(db)
-    tax_rate = settings_svc.get("default_tax_rate", "15")
+    s = settings_svc.get_all()
     from datetime import date as _date
     return templates.TemplateResponse("invoices/form.html", {
         "request": request, "invoice": None, "clients": clients,
-        "default_tax_rate": tax_rate, "error": None,
+        "default_tax_rate": s.get("default_tax_rate", "15"),
+        "currency": s.get("currency", "SAR"),
+        "default_notes": s.get("invoice_notes", ""),
+        "error": None,
         "today": _date.today(),
     })
 
@@ -98,11 +101,13 @@ async def edit_invoice_form(request: Request, invoice_id: int, db: Session = Dep
     if invoice.status.value in ("paid", "cancelled"):
         return RedirectResponse(url=f"/invoices/{invoice_id}", status_code=302)
     clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
-    settings_svc = SettingsService(db)
-    tax_rate = settings_svc.get("default_tax_rate", "15")
+    s = SettingsService(db).get_all()
     return templates.TemplateResponse("invoices/form.html", {
         "request": request, "invoice": invoice, "clients": clients,
-        "default_tax_rate": tax_rate, "error": None,
+        "default_tax_rate": s.get("default_tax_rate", "15"),
+        "currency": s.get("currency", "SAR"),
+        "default_notes": s.get("invoice_notes", ""),
+        "error": None,
         "today": invoice.issue_date,
     })
 

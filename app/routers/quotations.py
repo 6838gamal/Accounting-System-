@@ -51,10 +51,11 @@ async def new_quotation(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
-    tax_rate = SettingsService(db).get("default_tax_rate", "15")
+    s = SettingsService(db).get_all()
     return templates.TemplateResponse("quotations/form.html", {
         "request": request, "quotation": None, "clients": clients,
-        "default_tax_rate": tax_rate,
+        "default_tax_rate": s.get("default_tax_rate", "15"),
+        "currency": s.get("currency", "SAR"),
     })
 
 
