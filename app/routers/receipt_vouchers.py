@@ -3,9 +3,9 @@
 """
 import logging
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from urllib.parse import quote_plus
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -22,11 +22,10 @@ router = APIRouter(prefix="/receipt-vouchers", tags=["receipt_vouchers"])
 templates = Jinja2Templates(directory="app/templates")
 logger = logging.getLogger(__name__)
 
+_VALID_METHODS = {m.value for m in VoucherPaymentMethod}
+
 METHOD_LABELS = {
-    "cash": "نقداً",
-    "bank_transfer": "تحويل بنكي",
-    "check": "شيك",
-    "card": "بطاقة",
+    "cash": "نقداً", "bank_transfer": "تحويل بنكي", "check": "شيك", "card": "بطاقة",
 }
 
 
@@ -49,7 +48,10 @@ def _ok_redirect(base: str, msg: str) -> RedirectResponse:
 
 
 @router.get("", response_class=HTMLResponse)
-async def list_receipt_vouchers(request: Request, db: Session = Depends(get_db), page: int = 1):
+async def list_receipt_vouchers(
+    request: Request, db: Session = Depends(get_db),
+    page: int = Query(default=1, ge=1),
+):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
     query = db.query(ReceiptVoucher)
@@ -57,13 +59,9 @@ async def list_receipt_vouchers(request: Request, db: Session = Depends(get_db),
     vouchers = query.order_by(ReceiptVoucher.voucher_date.desc()).offset((page - 1) * 20).limit(20).all()
     total_amount = sum(float(v.amount) for v in db.query(ReceiptVoucher).all())
     return templates.TemplateResponse("receipt_vouchers/list.html", {
-        "request": request,
-        "vouchers": vouchers,
-        "total": total,
-        "page": page,
-        "total_pages": (total + 19) // 20,
-        "total_amount": total_amount,
-        "method_labels": METHOD_LABELS,
+        "request": request, "vouchers": vouchers, "total": total,
+        "page": page, "total_pages": max(1, (total + 19) // 20),
+        "total_amount": total_amount, "method_labels": METHOD_LABELS,
     })
 
 
@@ -71,49 +69,59 @@ async def list_receipt_vouchers(request: Request, db: Session = Depends(get_db),
 async def new_receipt_voucher(request: Request, db: Session = Depends(get_db)):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
-    suggested_number = _next_voucher_number(db)
     clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
     return templates.TemplateResponse("receipt_vouchers/form.html", {
-        "request": request,
-        "voucher": None,
-        "clients": clients,
-        "methods": list(VoucherPaymentMethod),
-        "method_labels": METHOD_LABELS,
-        "suggested_number": suggested_number,
-        "today": date.today().isoformat(),
-        "error": None,
+        "request": request, "voucher": None, "clients": clients,
+        "methods": list(VoucherPaymentMethod), "method_labels": METHOD_LABELS,
+        "suggested_number": _next_voucher_number(db),
+        "today": date.today().isoformat(), "error": None,
     })
 
 
 @router.post("/new")
 async def create_receipt_voucher(
     request: Request, db: Session = Depends(get_db),
-    voucher_number: str = Form(...),
-    voucher_date: str = Form(...),
-    received_from: str = Form(...),
-    amount: float = Form(...),
-    method: str = Form("cash"),
-    client_id: Optional[int] = Form(None),
-    description: Optional[str] = Form(None),
-    reference: Optional[str] = Form(None),
+    voucher_number: str = Form(...), voucher_date: str = Form(...),
+    received_from: str = Form(...), amount: str = Form(...),
+    method: str = Form("cash"), client_id: Optional[int] = Form(None),
+    description: Optional[str] = Form(None), reference: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
 ):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
 
     def _form_error(msg: str):
-        suggested_number = _next_voucher_number(db)
         clients = db.query(Client).filter(Client.is_active == True).order_by(Client.name).all()
         return templates.TemplateResponse("receipt_vouchers/form.html", {
-            "request": request,
-            "voucher": None,
-            "clients": clients,
-            "methods": list(VoucherPaymentMethod),
-            "method_labels": METHOD_LABELS,
-            "suggested_number": suggested_number,
-            "today": date.today().isoformat(),
-            "error": msg,
+            "request": request, "voucher": None, "clients": clients,
+            "methods": list(VoucherPaymentMethod), "method_labels": METHOD_LABELS,
+            "suggested_number": _next_voucher_number(db),
+            "today": date.today().isoformat(), "error": msg,
         })
+
+    voucher_number = voucher_number.strip()
+    if not voucher_number:
+        return _form_error("رقم السند مطلوب.")
+
+    received_from = received_from.strip()
+    if not received_from:
+        return _form_error("اسم المستلم منه مطلوب.")
+
+    try:
+        d_amount = Decimal(amount)
+    except (InvalidOperation, ValueError):
+        return _form_error("المبلغ غير صالح.")
+    if d_amount <= 0:
+        return _form_error("المبلغ يجب أن يكون أكبر من الصفر.")
+
+    if method not in _VALID_METHODS:
+        return _form_error("طريقة الدفع غير صالحة.")
+
+    # التحقق من العميل إذا حُدِّد
+    if client_id:
+        client = db.query(Client).filter(Client.id == client_id, Client.is_active == True).first()
+        if not client:
+            return _form_error("العميل المحدد غير موجود أو غير نشط.")
 
     try:
         parsed_date = date.fromisoformat(voucher_date)
@@ -122,16 +130,12 @@ async def create_receipt_voucher(
 
     try:
         voucher = ReceiptVoucher(
-            voucher_number=voucher_number,
-            voucher_date=parsed_date,
-            received_from=received_from,
-            amount=Decimal(str(amount)),
+            voucher_number=voucher_number, voucher_date=parsed_date,
+            received_from=received_from, amount=d_amount,
             method=VoucherPaymentMethod(method),
             client_id=client_id if client_id else None,
-            description=description or None,
-            reference=reference or None,
-            notes=notes or None,
-            created_by=request.session["user_id"],
+            description=description or None, reference=reference or None,
+            notes=notes or None, created_by=request.session["user_id"],
         )
         db.add(voucher)
         db.commit()
@@ -144,7 +148,7 @@ async def create_receipt_voucher(
     try:
         ActivityService(db).log(
             request.session["user_id"], "create", "receipt_vouchers", voucher.id,
-            f"سند قبض: {voucher_number} - {received_from}"
+            f"سند قبض: {voucher_number} - {received_from}",
         )
     except Exception:
         logger.warning("فشل تسجيل النشاط لسند القبض %s", voucher.id)
@@ -159,12 +163,9 @@ async def detail_receipt_voucher(request: Request, voucher_id: int, db: Session 
     voucher = db.query(ReceiptVoucher).filter(ReceiptVoucher.id == voucher_id).first()
     if not voucher:
         return RedirectResponse(url="/receipt-vouchers", status_code=302)
-    settings = SettingsService(db).get_all()
     return templates.TemplateResponse("receipt_vouchers/detail.html", {
-        "request": request,
-        "voucher": voucher,
-        "settings": settings,
-        "method_labels": METHOD_LABELS,
+        "request": request, "voucher": voucher,
+        "settings": SettingsService(db).get_all(), "method_labels": METHOD_LABELS,
     })
 
 
@@ -175,12 +176,9 @@ async def print_receipt_voucher(request: Request, voucher_id: int, db: Session =
     voucher = db.query(ReceiptVoucher).filter(ReceiptVoucher.id == voucher_id).first()
     if not voucher:
         return RedirectResponse(url="/receipt-vouchers", status_code=302)
-    settings = SettingsService(db).get_all()
     return templates.TemplateResponse("receipt_vouchers/print.html", {
-        "request": request,
-        "voucher": voucher,
-        "settings": settings,
-        "method_labels": METHOD_LABELS,
+        "request": request, "voucher": voucher,
+        "settings": SettingsService(db).get_all(), "method_labels": METHOD_LABELS,
     })
 
 
@@ -192,10 +190,8 @@ async def delete_receipt_voucher(request: Request, voucher_id: int, db: Session 
     if not voucher:
         return RedirectResponse(url="/receipt-vouchers", status_code=302)
 
-    # احفظ رقم السند قبل الحذف — بعد commit يصبح الكائن منفصلاً
     saved_number = voucher.voucher_number
 
-    # حذف السند أولاً في معاملة مستقلة
     try:
         db.delete(voucher)
         db.commit()
@@ -204,11 +200,10 @@ async def delete_receipt_voucher(request: Request, voucher_id: int, db: Session 
         db.rollback()
         return _err_redirect("/receipt-vouchers", "حدث خطأ أثناء حذف السند.")
 
-    # تسجيل النشاط بعد الحذف — الفشل لا يُلغي الحذف
     try:
         ActivityService(db).log(
             request.session["user_id"], "delete", "receipt_vouchers", voucher_id,
-            f"حذف سند قبض: {saved_number}"
+            f"حذف سند قبض: {saved_number}",
         )
     except Exception:
         logger.warning("فشل تسجيل النشاط لحذف سند القبض %s", voucher_id)

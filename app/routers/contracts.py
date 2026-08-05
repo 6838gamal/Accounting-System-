@@ -3,12 +3,12 @@
 """
 import logging
 from datetime import datetime
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from decimal import Decimal, InvalidOperation
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
-from decimal import Decimal
 from app.dependencies import get_db
 from app.models.contract import Contract, ContractStatus
 from app.models.client import Client
@@ -20,6 +20,9 @@ router = APIRouter(prefix="/contracts", tags=["contracts"])
 templates = Jinja2Templates(directory="app/templates")
 logger = logging.getLogger(__name__)
 
+# الحالات التي يُسمح فيها بتحويل العقد إلى فاتورة
+_CONVERTIBLE_STATUSES = {ContractStatus.DRAFT, ContractStatus.ACTIVE}
+
 
 def _generate_number(db: Session) -> str:
     last = db.query(Contract).order_by(Contract.id.desc()).first()
@@ -28,7 +31,11 @@ def _generate_number(db: Session) -> str:
 
 
 @router.get("", response_class=HTMLResponse)
-async def list_contracts(request: Request, db: Session = Depends(get_db), search: Optional[str] = None, page: int = 1):
+async def list_contracts(
+    request: Request, db: Session = Depends(get_db),
+    search: Optional[str] = None,
+    page: int = Query(default=1, ge=1),
+):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     query = db.query(Contract)
@@ -38,7 +45,7 @@ async def list_contracts(request: Request, db: Session = Depends(get_db), search
     contracts = query.order_by(Contract.created_at.desc()).offset((page - 1) * 20).limit(20).all()
     return templates.TemplateResponse("contracts/list.html", {
         "request": request, "contracts": contracts, "total": total,
-        "page": page, "search": search or "", "total_pages": (total + 19) // 20,
+        "page": page, "search": search or "", "total_pages": max(1, (total + 19) // 20),
     })
 
 
@@ -56,7 +63,7 @@ async def new_contract(request: Request, db: Session = Depends(get_db)):
 async def create_contract(
     request: Request, db: Session = Depends(get_db),
     client_id: int = Form(...), title: str = Form(...),
-    description: Optional[str] = Form(None), amount: float = Form(0),
+    description: Optional[str] = Form(None), amount: str = Form("0"),
     start_date: Optional[str] = Form(None), end_date: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
 ):
@@ -70,20 +77,40 @@ async def create_contract(
             "request": request, "contract": None, "clients": clients, "error": msg
         })
 
+    # التحقق من العميل
+    client = db.query(Client).filter(Client.id == client_id, Client.is_active == True).first()
+    if not client:
+        return _form_error("العميل المحدد غير موجود أو غير نشط.")
+
+    title = title.strip()
+    if not title:
+        return _form_error("عنوان العقد مطلوب.")
+
+    # التحقق من المبلغ
+    try:
+        d_amount = Decimal(amount)
+    except (InvalidOperation, ValueError):
+        return _form_error("قيمة العقد غير صالحة.")
+    if d_amount < 0:
+        return _form_error("قيمة العقد لا يمكن أن تكون سالبة.")
+
+    # التحقق من التواريخ
     try:
         parsed_start = date.fromisoformat(start_date) if start_date else None
         parsed_end = date.fromisoformat(end_date) if end_date else None
     except (ValueError, TypeError):
         return _form_error("تاريخ غير صالح. يرجى التحقق من تواريخ العقد.")
 
+    if parsed_start and parsed_end and parsed_end < parsed_start:
+        return _form_error("تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية أو مساوياً له.")
+
     try:
         contract = Contract(
             contract_number=_generate_number(db),
             client_id=client_id, title=title,
             description=description or None,
-            amount=Decimal(str(amount)),
-            start_date=parsed_start,
-            end_date=parsed_end,
+            amount=d_amount,
+            start_date=parsed_start, end_date=parsed_end,
             notes=notes or None,
             created_by=request.session["user_id"],
         )
@@ -130,7 +157,7 @@ async def edit_contract(request: Request, contract_id: int, db: Session = Depend
 async def update_contract(
     request: Request, contract_id: int, db: Session = Depends(get_db),
     client_id: int = Form(...), title: str = Form(...),
-    description: Optional[str] = Form(None), amount: float = Form(0),
+    description: Optional[str] = Form(None), amount: str = Form("0"),
     start_date: Optional[str] = Form(None), end_date: Optional[str] = Form(None),
     status: str = Form("draft"), notes: Optional[str] = Form(None),
 ):
@@ -147,17 +174,36 @@ async def update_contract(
             "request": request, "contract": contract, "clients": clients, "error": msg
         })
 
+    title = title.strip()
+    if not title:
+        return _form_error("عنوان العقد مطلوب.")
+
+    try:
+        d_amount = Decimal(amount)
+    except (InvalidOperation, ValueError):
+        return _form_error("قيمة العقد غير صالحة.")
+    if d_amount < 0:
+        return _form_error("قيمة العقد لا يمكن أن تكون سالبة.")
+
+    # التحقق من الحالة
+    valid_statuses = {s.value for s in ContractStatus}
+    if status not in valid_statuses:
+        return _form_error("حالة العقد غير صالحة.")
+
     try:
         parsed_start = date.fromisoformat(start_date) if start_date else None
         parsed_end = date.fromisoformat(end_date) if end_date else None
     except (ValueError, TypeError):
         return _form_error("تاريخ غير صالح. يرجى التحقق من تواريخ العقد.")
 
+    if parsed_start and parsed_end and parsed_end < parsed_start:
+        return _form_error("تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية أو مساوياً له.")
+
     try:
         contract.client_id = client_id
         contract.title = title
         contract.description = description or None
-        contract.amount = Decimal(str(amount))
+        contract.amount = d_amount
         contract.start_date = parsed_start
         contract.end_date = parsed_end
         contract.status = ContractStatus(status)
@@ -178,7 +224,6 @@ async def update_contract(
 
 @router.get("/{contract_id}/print", response_class=HTMLResponse)
 async def print_contract(request: Request, contract_id: int, db: Session = Depends(get_db)):
-    """صفحة طباعة العقد"""
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     contract = db.query(Contract).filter(Contract.id == contract_id).first()
@@ -192,7 +237,6 @@ async def print_contract(request: Request, contract_id: int, db: Session = Depen
 
 @router.get("/{contract_id}/layout-editor", response_class=HTMLResponse)
 async def layout_editor(request: Request, contract_id: int, db: Session = Depends(get_db)):
-    """محرر تخطيط العقد قبل الطباعة"""
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     contract = db.query(Contract).filter(Contract.id == contract_id).first()
@@ -206,7 +250,6 @@ async def layout_editor(request: Request, contract_id: int, db: Session = Depend
 
 @router.get("/{contract_id}/pdf")
 async def download_contract_pdf(request: Request, contract_id: int, db: Session = Depends(get_db)):
-    """تنزيل العقد كملف PDF"""
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     contract = db.query(Contract).filter(Contract.id == contract_id).first()
@@ -219,35 +262,33 @@ async def download_contract_pdf(request: Request, contract_id: int, db: Session 
     except Exception:
         logger.exception("فشل توليد PDF للعقد %s", contract_id)
         raise HTTPException(status_code=500, detail="حدث خطأ أثناء توليد ملف PDF")
-    filename = f"contract-{contract.contract_number}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="contract-{contract.contract_number}.pdf"'},
     )
 
 
 @router.post("/{contract_id}/to-invoice")
 async def contract_to_invoice(request: Request, contract_id: int, db: Session = Depends(get_db)):
-    """تحويل العقد إلى فاتورة"""
+    """تحويل العقد إلى فاتورة — مسموح فقط للعقود النشطة أو المسودة"""
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     contract = db.query(Contract).filter(Contract.id == contract_id).first()
     if not contract:
         raise HTTPException(status_code=404)
+
+    if contract.status not in _CONVERTIBLE_STATUSES:
+        return RedirectResponse(url=f"/contracts/{contract_id}?error=1", status_code=302)
+
     try:
         from app.services.invoice_service import InvoiceService
         from datetime import date
         service = InvoiceService(db)
         invoice = service.create(
-            {
-                "client_id": contract.client_id,
-                "contract_id": contract.id,
-                "issue_date": date.today(),
-                "tax_rate": Decimal("0"),
-                "discount": Decimal("0"),
-                "notes": f"تم إنشاؤها من العقد رقم {contract.contract_number}",
-            },
+            {"client_id": contract.client_id, "contract_id": contract.id,
+             "issue_date": date.today(), "tax_rate": Decimal("0"), "discount": Decimal("0"),
+             "notes": f"تم إنشاؤها من العقد رقم {contract.contract_number}"},
             items_data=[{"description": contract.title, "quantity": 1, "unit_price": float(contract.amount)}],
             created_by=request.session["user_id"],
         )

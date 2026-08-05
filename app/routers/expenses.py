@@ -3,8 +3,8 @@
 """
 import logging
 from datetime import date
-from decimal import Decimal
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from decimal import Decimal, InvalidOperation
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -21,21 +21,27 @@ EXPENSE_CATEGORIES = [
     "رواتب", "إيجار", "مرافق", "تسويق", "سفر", "معدات", "صيانة",
     "قرطاسية", "اتصالات", "تأمين", "ضرائب ورسوم", "أخرى"
 ]
+_VALID_CATEGORIES = set(EXPENSE_CATEGORIES)
 
 
 @router.get("", response_class=HTMLResponse)
-async def list_expenses(request: Request, db: Session = Depends(get_db), page: int = 1, status: Optional[str] = None):
+async def list_expenses(
+    request: Request, db: Session = Depends(get_db),
+    page: int = Query(default=1, ge=1), status: Optional[str] = None,
+):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     query = db.query(Expense)
-    if status:
+    if status and status in {s.value for s in ExpenseStatus}:
         query = query.filter(Expense.status == status)
+    else:
+        status = None
     total = query.count()
     expenses = query.order_by(Expense.expense_date.desc()).offset((page - 1) * 20).limit(20).all()
     total_amount = sum(float(e.amount) for e in db.query(Expense).filter(Expense.status == ExpenseStatus.APPROVED).all())
     return templates.TemplateResponse("expenses/list.html", {
         "request": request, "expenses": expenses, "total": total,
-        "page": page, "total_pages": (total + 19) // 20,
+        "page": page, "total_pages": max(1, (total + 19) // 20),
         "total_amount": total_amount, "status_filter": status,
     })
 
@@ -53,7 +59,7 @@ async def new_expense(request: Request):
 async def create_expense(
     request: Request, db: Session = Depends(get_db),
     title: str = Form(...), category: str = Form(...),
-    amount: float = Form(...), expense_date: str = Form(...),
+    amount: str = Form(...), expense_date: str = Form(...),
     description: Optional[str] = Form(None),
 ):
     if not request.session.get("user_id"):
@@ -64,6 +70,22 @@ async def create_expense(
             "request": request, "expense": None, "categories": EXPENSE_CATEGORIES, "error": msg
         })
 
+    title = title.strip()
+    if not title:
+        return _form_error("عنوان المصروف مطلوب.")
+    if len(title) > 200:
+        return _form_error("عنوان المصروف يجب ألا يتجاوز 200 حرف.")
+
+    if category not in _VALID_CATEGORIES:
+        return _form_error("الفئة المحددة غير صالحة.")
+
+    try:
+        d_amount = Decimal(amount)
+    except (InvalidOperation, ValueError):
+        return _form_error("المبلغ غير صالح.")
+    if d_amount <= 0:
+        return _form_error("المبلغ يجب أن يكون أكبر من الصفر.")
+
     try:
         parsed_date = date.fromisoformat(expense_date)
     except (ValueError, TypeError):
@@ -72,9 +94,8 @@ async def create_expense(
     try:
         expense = Expense(
             title=title, category=category,
-            amount=Decimal(str(amount)),
-            expense_date=parsed_date,
-            description=description or None,
+            amount=d_amount, expense_date=parsed_date,
+            description=description.strip() or None if description else None,
             created_by=request.session["user_id"],
         )
         db.add(expense)
@@ -100,6 +121,8 @@ async def approve_expense(request: Request, expense_id: int, db: Session = Depen
     expense = db.query(Expense).filter(Expense.id == expense_id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="المصروف غير موجود")
+    if expense.status != ExpenseStatus.PENDING:
+        return RedirectResponse(url="/expenses", status_code=302)
     try:
         expense.status = ExpenseStatus.APPROVED
         db.commit()
@@ -116,6 +139,8 @@ async def reject_expense(request: Request, expense_id: int, db: Session = Depend
     expense = db.query(Expense).filter(Expense.id == expense_id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="المصروف غير موجود")
+    if expense.status != ExpenseStatus.PENDING:
+        return RedirectResponse(url="/expenses", status_code=302)
     try:
         expense.status = ExpenseStatus.REJECTED
         db.commit()

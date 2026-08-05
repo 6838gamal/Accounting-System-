@@ -3,9 +3,9 @@
 """
 import logging
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from urllib.parse import quote_plus
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -24,12 +24,11 @@ EXPENSE_CATEGORIES = [
     "رواتب", "إيجار", "مرافق", "تسويق", "سفر", "معدات", "صيانة",
     "قرطاسية", "اتصالات", "تأمين", "ضرائب ورسوم", "أخرى"
 ]
+_VALID_CATEGORIES = set(EXPENSE_CATEGORIES)
+_VALID_METHODS = {m.value for m in VoucherPaymentMethod}
 
 METHOD_LABELS = {
-    "cash": "نقداً",
-    "bank_transfer": "تحويل بنكي",
-    "check": "شيك",
-    "card": "بطاقة",
+    "cash": "نقداً", "bank_transfer": "تحويل بنكي", "check": "شيك", "card": "بطاقة",
 }
 
 
@@ -52,7 +51,10 @@ def _ok_redirect(base: str, msg: str) -> RedirectResponse:
 
 
 @router.get("", response_class=HTMLResponse)
-async def list_expense_vouchers(request: Request, db: Session = Depends(get_db), page: int = 1):
+async def list_expense_vouchers(
+    request: Request, db: Session = Depends(get_db),
+    page: int = Query(default=1, ge=1),
+):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
     query = db.query(ExpenseVoucher)
@@ -60,13 +62,9 @@ async def list_expense_vouchers(request: Request, db: Session = Depends(get_db),
     vouchers = query.order_by(ExpenseVoucher.voucher_date.desc()).offset((page - 1) * 20).limit(20).all()
     total_amount = sum(float(v.amount) for v in db.query(ExpenseVoucher).all())
     return templates.TemplateResponse("expense_vouchers/list.html", {
-        "request": request,
-        "vouchers": vouchers,
-        "total": total,
-        "page": page,
-        "total_pages": (total + 19) // 20,
-        "total_amount": total_amount,
-        "method_labels": METHOD_LABELS,
+        "request": request, "vouchers": vouchers, "total": total,
+        "page": page, "total_pages": max(1, (total + 19) // 20),
+        "total_amount": total_amount, "method_labels": METHOD_LABELS,
     })
 
 
@@ -74,47 +72,56 @@ async def list_expense_vouchers(request: Request, db: Session = Depends(get_db),
 async def new_expense_voucher(request: Request, db: Session = Depends(get_db)):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
-    suggested_number = _next_voucher_number(db)
     return templates.TemplateResponse("expense_vouchers/form.html", {
-        "request": request,
-        "voucher": None,
-        "categories": EXPENSE_CATEGORIES,
-        "methods": list(VoucherPaymentMethod),
+        "request": request, "voucher": None,
+        "categories": EXPENSE_CATEGORIES, "methods": list(VoucherPaymentMethod),
         "method_labels": METHOD_LABELS,
-        "suggested_number": suggested_number,
-        "today": date.today().isoformat(),
-        "error": None,
+        "suggested_number": _next_voucher_number(db),
+        "today": date.today().isoformat(), "error": None,
     })
 
 
 @router.post("/new")
 async def create_expense_voucher(
     request: Request, db: Session = Depends(get_db),
-    voucher_number: str = Form(...),
-    voucher_date: str = Form(...),
-    payee: str = Form(...),
-    amount: float = Form(...),
-    method: str = Form("cash"),
-    category: Optional[str] = Form(None),
-    description: Optional[str] = Form(None),
-    reference: Optional[str] = Form(None),
+    voucher_number: str = Form(...), voucher_date: str = Form(...),
+    payee: str = Form(...), amount: str = Form(...),
+    method: str = Form("cash"), category: Optional[str] = Form(None),
+    description: Optional[str] = Form(None), reference: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
 ):
     if not _require_login(request):
         return RedirectResponse(url="/auth/login", status_code=302)
 
     def _form_error(msg: str):
-        suggested_number = _next_voucher_number(db)
         return templates.TemplateResponse("expense_vouchers/form.html", {
-            "request": request,
-            "voucher": None,
-            "categories": EXPENSE_CATEGORIES,
-            "methods": list(VoucherPaymentMethod),
+            "request": request, "voucher": None,
+            "categories": EXPENSE_CATEGORIES, "methods": list(VoucherPaymentMethod),
             "method_labels": METHOD_LABELS,
-            "suggested_number": suggested_number,
-            "today": date.today().isoformat(),
-            "error": msg,
+            "suggested_number": _next_voucher_number(db),
+            "today": date.today().isoformat(), "error": msg,
         })
+
+    voucher_number = voucher_number.strip()
+    if not voucher_number:
+        return _form_error("رقم السند مطلوب.")
+
+    payee = payee.strip()
+    if not payee:
+        return _form_error("اسم المستفيد مطلوب.")
+
+    try:
+        d_amount = Decimal(amount)
+    except (InvalidOperation, ValueError):
+        return _form_error("المبلغ غير صالح.")
+    if d_amount <= 0:
+        return _form_error("المبلغ يجب أن يكون أكبر من الصفر.")
+
+    if method not in _VALID_METHODS:
+        return _form_error("طريقة الدفع غير صالحة.")
+
+    if category and category not in _VALID_CATEGORIES:
+        return _form_error("الفئة المحددة غير صالحة.")
 
     try:
         parsed_date = date.fromisoformat(voucher_date)
@@ -123,16 +130,12 @@ async def create_expense_voucher(
 
     try:
         voucher = ExpenseVoucher(
-            voucher_number=voucher_number,
-            voucher_date=parsed_date,
-            payee=payee,
-            amount=Decimal(str(amount)),
+            voucher_number=voucher_number, voucher_date=parsed_date,
+            payee=payee, amount=d_amount,
             method=VoucherPaymentMethod(method),
             category=category or None,
-            description=description or None,
-            reference=reference or None,
-            notes=notes or None,
-            created_by=request.session["user_id"],
+            description=description or None, reference=reference or None,
+            notes=notes or None, created_by=request.session["user_id"],
         )
         db.add(voucher)
         db.commit()
@@ -145,7 +148,7 @@ async def create_expense_voucher(
     try:
         ActivityService(db).log(
             request.session["user_id"], "create", "expense_vouchers", voucher.id,
-            f"سند مصروف: {voucher_number} - {payee}"
+            f"سند مصروف: {voucher_number} - {payee}",
         )
     except Exception:
         logger.warning("فشل تسجيل النشاط لسند المصروف %s", voucher.id)
@@ -160,12 +163,9 @@ async def detail_expense_voucher(request: Request, voucher_id: int, db: Session 
     voucher = db.query(ExpenseVoucher).filter(ExpenseVoucher.id == voucher_id).first()
     if not voucher:
         return RedirectResponse(url="/expense-vouchers", status_code=302)
-    settings = SettingsService(db).get_all()
     return templates.TemplateResponse("expense_vouchers/detail.html", {
-        "request": request,
-        "voucher": voucher,
-        "settings": settings,
-        "method_labels": METHOD_LABELS,
+        "request": request, "voucher": voucher,
+        "settings": SettingsService(db).get_all(), "method_labels": METHOD_LABELS,
     })
 
 
@@ -176,12 +176,9 @@ async def print_expense_voucher(request: Request, voucher_id: int, db: Session =
     voucher = db.query(ExpenseVoucher).filter(ExpenseVoucher.id == voucher_id).first()
     if not voucher:
         return RedirectResponse(url="/expense-vouchers", status_code=302)
-    settings = SettingsService(db).get_all()
     return templates.TemplateResponse("expense_vouchers/print.html", {
-        "request": request,
-        "voucher": voucher,
-        "settings": settings,
-        "method_labels": METHOD_LABELS,
+        "request": request, "voucher": voucher,
+        "settings": SettingsService(db).get_all(), "method_labels": METHOD_LABELS,
     })
 
 
@@ -193,10 +190,8 @@ async def delete_expense_voucher(request: Request, voucher_id: int, db: Session 
     if not voucher:
         return RedirectResponse(url="/expense-vouchers", status_code=302)
 
-    # احفظ رقم السند قبل الحذف — بعد commit يصبح الكائن منفصلاً
     saved_number = voucher.voucher_number
 
-    # حذف السند أولاً في معاملة مستقلة
     try:
         db.delete(voucher)
         db.commit()
@@ -205,11 +200,10 @@ async def delete_expense_voucher(request: Request, voucher_id: int, db: Session 
         db.rollback()
         return _err_redirect("/expense-vouchers", "حدث خطأ أثناء حذف السند.")
 
-    # تسجيل النشاط بعد الحذف — الفشل لا يُلغي الحذف
     try:
         ActivityService(db).log(
             request.session["user_id"], "delete", "expense_vouchers", voucher_id,
-            f"حذف سند مصروف: {saved_number}"
+            f"حذف سند مصروف: {saved_number}",
         )
     except Exception:
         logger.warning("فشل تسجيل النشاط لحذف سند المصروف %s", voucher_id)

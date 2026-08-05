@@ -132,6 +132,16 @@ class InvoiceService:
         if not invoice:
             raise ValueError("الفاتورة غير موجودة")
 
+        if invoice.status.value in ("paid", "cancelled"):
+            raise ValueError("لا يمكن تسجيل دفعة على فاتورة مدفوعة أو ملغاة")
+
+        if amount <= Decimal("0"):
+            raise ValueError("مبلغ الدفعة يجب أن يكون أكبر من الصفر")
+
+        remaining = invoice.total - (invoice.paid_amount or Decimal("0"))
+        if amount > remaining:
+            raise ValueError(f"مبلغ الدفعة ({amount}) يتجاوز المتبقي ({remaining})")
+
         payment = Payment(
             invoice_id=invoice_id,
             client_id=invoice.client_id,
