@@ -19,11 +19,14 @@
         }
         .btn-print { background: #2563eb; color: #fff; }
         .btn-back  { background: #e2e8f0; color: #1e293b; }
+        @page { size: A4 portrait; margin: 15mm; }
         @media print {
             .print-actions { display: none; }
-            body { margin: 0; }
+            html, body { width: 210mm; }
+            body { margin: 0; background: #fff; }
+            .page { width: 100%; margin: 0; padding: 0; box-shadow: none; border-radius: 0; }
         }
-        .page { max-width: 800px; margin: 40px auto; padding: 40px; background: #fff; }
+        .page { width: 210mm; min-height: 297mm; margin: 20px auto; padding: 20mm; background: #fff; }
 
         /* ترويسة */
         .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 28px; }
