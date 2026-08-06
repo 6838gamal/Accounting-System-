@@ -237,7 +237,7 @@
     </div>
 </div>
 <script>
-const SEP_KEY = 'sep_invoice'; let sepSigPad;
+const SEP_KEY = 'sep_company'; let sepSigPad;
 function sepToggle() { document.getElementById('sepPanel').classList.toggle('open'); }
 function sepInitCanvas() { const c = document.getElementById('sepSigCanvas'), dpr = window.devicePixelRatio || 1; c.width = c.offsetWidth * dpr; c.height = 100 * dpr; c.getContext('2d').scale(dpr, dpr); sepSigPad = new SignaturePad(c, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 }); }
 function sepHandleStamp(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(ev) { const src = ev.target.result; const img = document.getElementById('sepStampEditorImg'); img.src = src; img.style.display = 'block'; document.getElementById('sepStampPh').style.display = 'none'; document.getElementById('sepRemoveStampBtn').style.display = 'block'; sepShowInDoc('docStampImg', src); sepSave({ stamp: src }); }; reader.readAsDataURL(file); }
