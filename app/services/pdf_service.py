@@ -503,6 +503,7 @@ def generate_invoice_pdf(invoice, company_settings: dict) -> bytes:
             company_settings.get("pdf_signatory_title", "المدير العام"),
             client.name if client else "",
             s, page_width,
+            company_settings=company_settings,
         )
 
     _build_footer(elements, company_settings, s)
@@ -672,6 +673,7 @@ def generate_quotation_pdf(quotation, company_settings: dict) -> bytes:
         company_settings.get("pdf_signatory_title", "المدير العام"),
         client.name if client else "",
         s, page_width,
+        company_settings=company_settings,
     )
 
     _build_footer(elements, company_settings, s)

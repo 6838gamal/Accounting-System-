@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عقد رقم {{ contract.contract_number }}</title>
     <style>
+        :root { --primary: {{ settings.get('pdf_primary_color', '#2563eb') }}; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
@@ -31,7 +32,7 @@
             text-decoration: none;
             display: inline-block;
         }
-        .btn-print { background: #2563eb; color: #fff; }
+        .btn-print { background: var(--primary); color: #fff; }
         .btn-back  { background: #e2e8f0; color: #1e293b; }
         @page { size: A4 portrait; margin: 12mm; }
         @media print {
@@ -83,14 +84,14 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 3px solid #2563eb;
+            border-bottom: 3px solid var(--primary);
             padding-bottom: 20px;
             margin-bottom: 24px;
         }
-        .company-info h1 { font-size: 20px; color: #2563eb; margin-bottom: 4px; }
+        .company-info h1 { font-size: 20px; color: var(--primary); margin-bottom: 4px; }
         .company-info p  { color: #64748b; font-size: 12px; line-height: 1.6; }
         .doc-info { text-align: left; }
-        .doc-number { font-size: 20px; font-weight: 700; color: #2563eb; }
+        .doc-number { font-size: 20px; font-weight: 700; color: var(--primary); }
         .doc-date   { font-size: 12px; color: #64748b; margin-top: 4px; }
 
         .status-badge {
@@ -157,7 +158,7 @@
         .amount-value {
             font-size: 18px;
             font-weight: 700;
-            color: #2563eb;
+            color: var(--primary);
         }
 
         .section {
@@ -373,32 +374,25 @@
     </div>
     {% endif %}
 
-    <!-- ════════════════════════
-         التوقيعات والختم في الطباعة
-         توقيع المؤسسة يمين، توقيع العميل يسار، الختم في المنتصف
-    ════════════════════════ -->
+    <!-- التوقيعات والختم -->
     <div class="signatures-wrapper">
         <div class="signatures-row">
-            <!-- يمين: توقيع المؤسسة -->
+            <!-- يمين: ختم المؤسسة وتوقيعها (الطرف الأول) -->
             <div class="sig-box">
-                <div class="sig-label">توقيع المؤسسة</div>
-                <div class="sig-placeholder">
-                    <img id="docSigImg" style="display:none;">
+                <div class="sig-label">التوقيع والختم (الطرف الأول)</div>
+                <div class="sig-placeholder" style="flex-direction:column; gap:4px;">
+                    <img id="docStampImg" style="display:none; max-width:110px; max-height:70px; object-fit:contain;">
+                    <img id="docSigImg"   style="display:none; max-width:110px; max-height:60px; object-fit:contain;">
                 </div>
+                <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+                <div class="sig-line" style="border-top:none; padding-top:0; margin-top:2px;">{{ settings.get('pdf_signatory_title', 'المدير العام') }}</div>
             </div>
 
-            <!-- يسار: توقيع العميل -->
+            <!-- يسار: توقيع العميل (الطرف الثاني) -->
             <div class="sig-box">
-                <div class="sig-label">توقيع العميل (الطرف الثاني)</div>
+                <div class="sig-label">التوقيع والختم (الطرف الثاني - العميل)</div>
                 <div class="sig-placeholder">مكان التوقيع</div>
-            </div>
-        </div>
-
-        <!-- الختم في المنتصف إلى الأسفل -->
-        <div class="stamp-wrapper">
-            <div class="stamp-box">
-                <div class="stamp-label">ختم المؤسسة</div>
-                <img id="docStampImg" class="stamp-img" style="display:none;">
+                <div class="sig-line">{{ contract.client.name if contract.client else '' }}</div>
             </div>
         </div>
     </div>
@@ -424,14 +418,14 @@
 .sep-section { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
 .sep-section-title { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; }
 .sep-upload-zone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; cursor: pointer; background: #f8fafc; position: relative; transition: border-color .2s; min-height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.sep-upload-zone:hover { border-color: #2563eb; }
+.sep-upload-zone:hover { border-color: var(--primary); }
 .sep-upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 .sep-upload-zone img { max-width: 100%; max-height: 70px; display: none; border-radius: 4px; }
 .sep-ph { font-size: 12px; color: #94a3b8; }
 .sep-canvas-wrap { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff; touch-action: none; }
 .sep-canvas { width: 100%; height: 100px; display: block; cursor: crosshair; }
 .sep-btn { display: block; width: 100%; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; margin-top: 6px; font-family: inherit; }
-.sep-btn-primary { background: #2563eb; color: #fff; }
+.sep-btn-primary { background: var(--primary); color: #fff; }
 .sep-btn-danger { background: #fee2e2; color: #dc2626; }
 .sep-btn-secondary { background: #f1f5f9; color: #475569; }
 </style>
@@ -463,7 +457,7 @@ function sepInitCanvas() {
     const c = document.getElementById('sepSigCanvas'), dpr = window.devicePixelRatio || 1;
     c.width = c.offsetWidth * dpr; c.height = 100 * dpr;
     c.getContext('2d').scale(dpr, dpr);
-    sepSigPad = new SignaturePad(c, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 });
+    sepSigPad = new SignaturePad(c, { penColor: '{{ settings.get("pdf_primary_color", "#2563eb") }}', minWidth: 1, maxWidth: 2.5 });
 }
 
 function sepHandleStamp(e) {
