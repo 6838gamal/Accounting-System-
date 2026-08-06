@@ -398,7 +398,7 @@ function sepSave(updates) { try { const data = JSON.parse(localStorage.getItem(S
 function sepLoad() {
     try {
         const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}');
-        const stampSrc = data.stamp || SEP_SETTINGS_STAMP || null;
+        const stampSrc = SEP_SETTINGS_STAMP || data.stamp || null;
         if (stampSrc) {
             const img = document.getElementById('sepStampEditorImg');
             img.src = stampSrc; img.style.display = 'block';
@@ -406,7 +406,7 @@ function sepLoad() {
             document.getElementById('sepRemoveStampBtn').style.display = data.stamp ? 'block' : 'none';
             sepShowInDoc('docStampImg', stampSrc);
         }
-        const sigSrc = data.signature || SEP_SETTINGS_SIG || null;
+        const sigSrc = SEP_SETTINGS_SIG || data.signature || null;
         if (sigSrc) { sepShowInDoc('docSigImg', sigSrc); }
     } catch(e) {}
 }

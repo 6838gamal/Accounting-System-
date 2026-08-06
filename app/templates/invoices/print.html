@@ -257,7 +257,7 @@ function sepLoad() {
     try {
         const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}');
         // الختم: localStorage يتقدم على الإعدادات؛ إعدادات الشركة هي القيمة الافتراضية
-        const stampSrc = data.stamp || SEP_SETTINGS_STAMP || null;
+        const stampSrc = SEP_SETTINGS_STAMP || data.stamp || null;
         if (stampSrc) {
             const img = document.getElementById('sepStampEditorImg');
             img.src = stampSrc; img.style.display = 'block';
@@ -266,7 +266,7 @@ function sepLoad() {
             sepShowInDoc('docStampImg', stampSrc);
         }
         // التوقيع: localStorage يتقدم على إعدادات الشركة
-        const sigSrc = data.signature || SEP_SETTINGS_SIG || null;
+        const sigSrc = SEP_SETTINGS_SIG || data.signature || null;
         if (sigSrc) { sepShowInDoc('docSigImg', sigSrc); }
     } catch(e) {}
 }
