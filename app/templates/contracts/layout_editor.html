@@ -480,37 +480,69 @@
         }
 
         @media print {
-            @page { margin: 12mm 14mm; }
+            @page { margin: 10mm 12mm; }
+
             .topbar, .controls-panel, .fab-print, .preview-divider { display: none !important; }
-            body { overflow: auto; height: auto; background: #fff; }
-            .editor-layout { margin-top: 0; height: auto; }
-            .preview-area { padding: 0; background: #fff; }
-            .a4-page { box-shadow: none; border-radius: 0; width: 100%; min-height: auto; padding: 24px 32px; }
+            body            { overflow: auto; height: auto; background: #fff; font-size: 12px; }
+            .editor-layout  { margin-top: 0; height: auto; }
+            .preview-area   { padding: 0; background: #fff; }
 
-            /* تقليص هوامش المحتوى */
-            .doc-header        { padding-bottom: 12px; margin-bottom: 14px; }
-            .header-divider    { margin-bottom: 14px; }
-            .contract-title-block { margin-bottom: 14px; padding: 8px; }
-            .parties-row       { margin-bottom: 12px; }
-            .party-box         { padding: 10px 12px; }
-            .details-table     { margin-bottom: 12px; }
+            /* الورقة: حشوة أقل وحجم خط أصغر */
+            .a4-page {
+                box-shadow: none; border-radius: 0;
+                width: 100%; min-height: auto;
+                padding: 20px 28px;
+                font-size: 12px;
+            }
+
+            /* ── رأس المستند ── */
+            .doc-header          { padding-bottom: 8px;  margin-bottom: 10px; }
+            .header-divider      { margin-bottom: 10px; }
+            .company-logo        { max-height: 48px; margin-bottom: 4px; }
+            .doc-header .company-name { font-size: 16px; }
+            .doc-meta .doc-number     { font-size: 16px; }
+
+            /* قالب formal: هامش سلبي مرتبط بحشوة الصفحة — نعيد حسابه */
+            body[data-template="formal"] .doc-header {
+                margin: -20px -28px 14px;
+                padding: 14px 20px;
+            }
+            body[data-template="formal"] .header-divider { margin: 0 0 10px; }
+
+            /* ── عنوان العقد ── */
+            .contract-title-block { margin-bottom: 10px; padding: 6px 10px; font-size: 14px; }
+
+            /* ── بيانات الأطراف ── */
+            .parties-row   { margin-bottom: 8px; gap: 10px; }
+            .party-box     { padding: 8px 10px; }
+            .party-box .party-name { font-size: 13px; }
+
+            /* ── جدول التفاصيل ── */
+            .details-table            { margin-bottom: 8px; font-size: 11.5px; }
             .details-table th,
-            .details-table td  { padding: 6px 10px; }
-            .doc-section       { margin-bottom: 12px; }
-            .doc-section-body  { padding: 10px; line-height: 1.6; }
-            .doc-section-title { padding: 5px 10px; }
+            .details-table td         { padding: 5px 8px; }
 
-            /* التوقيعات والختم — يبقيان معاً ولا ينقسمان */
+            /* ── أقسام البنود ── */
+            .doc-section              { margin-bottom: 8px; }
+            .doc-section-title        { padding: 4px 8px; font-size: 12px; }
+            .doc-section-body         { padding: 8px 10px; line-height: 1.55; font-size: 12px; }
+
+            /* ── التوقيعات والختم: وحدة واحدة لا تنقسم ── */
             .signatures-wrapper {
-                margin-top: 16px;
-                padding-top: 12px;
+                margin-top: 12px;
+                padding-top: 10px;
                 break-inside: avoid;
                 page-break-inside: avoid;
             }
-            .sig-block         { padding: 10px 12px 8px; }
-            .sig-block .sig-line { margin-top: 24px; }
-            .stamp-wrapper     { margin-top: 10px; }
-            .stamp-box         { padding: 8px 18px; }
+            .signatures-row    { gap: 10px; }
+            .sig-block         { padding: 8px 10px 6px; }
+            .sig-block .sig-title { font-size: 11px; margin-bottom: 6px; }
+            .sig-block .sig-img   { max-height: 48px; }
+            .sig-block .sig-line  { margin-top: 18px; padding-top: 6px; font-size: 11px; }
+            .stamp-wrapper     { margin-top: 8px; }
+            .stamp-box         { padding: 6px 16px; min-width: 110px; }
+            .stamp-box .stamp-label { font-size: 10px; margin-bottom: 4px; }
+            #docStampImg       { max-width: 90px; max-height: 56px; }
         }
     </style>
 </head>
