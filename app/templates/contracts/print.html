@@ -33,12 +33,42 @@
         }
         .btn-print { background: #2563eb; color: #fff; }
         .btn-back  { background: #e2e8f0; color: #1e293b; }
-        @page { size: A4 portrait; margin: 15mm; }
+        @page { size: A4 portrait; margin: 12mm; }
         @media print {
             .print-actions { display: none; }
             html, body { width: 210mm; }
             body { margin: 0; background: #fff; }
-            .page { width: 100%; min-height: auto; margin: 0; padding: 15mm; box-shadow: none; border-radius: 0; }
+            .page {
+                width: 100%; min-height: auto; margin: 0; padding: 10mm;
+                box-shadow: none; border-radius: 0;
+            }
+            /* تقليل المسافات لضمان احتواء الصفحة كاملاً */
+            .header        { padding-bottom: 10px; margin-bottom: 12px; }
+            .contract-title{ margin: 10px 0; padding: 8px; font-size: 15px; }
+            .parties       { margin-bottom: 12px; gap: 12px; }
+            .party-box     { padding: 10px; }
+            .details-table { margin-bottom: 12px; }
+            .details-table th, .details-table td { padding: 7px 10px; }
+            .section       { margin-bottom: 10px; }
+            .section-body  { padding: 8px 12px; }
+            .amount-value  { font-size: 15px; }
+            /* منع انقسام قسم التوقيعات والختم على صفحتين */
+            .signatures-wrapper {
+                margin-top: 16px !important;
+                padding-top: 12px !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+            .signatures-row { gap: 12px; }
+            .sig-box        { padding: 10px 8px; }
+            .sig-placeholder{ min-height: 60px; }
+            .stamp-wrapper  {
+                margin-top: 8px !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+            .stamp-box      { padding: 8px 16px; }
+            .footer         { margin-top: 12px; padding-top: 8px; }
         }
 
         .page {
