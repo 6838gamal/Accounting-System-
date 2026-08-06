@@ -297,6 +297,9 @@
     <!-- ترويسة -->
     <div class="header">
         <div class="company-info">
+            {% if settings.get('company_logo') %}
+            <img src="{{ settings.get('company_logo') }}" style="max-height:70px; max-width:160px; object-fit:contain; margin-bottom:8px; display:block;">
+            {% endif %}
             <h1>{{ settings.get('company_name', 'اسم الشركة') }}</h1>
             {% if settings.get('company_address') %}
             <p>{{ settings.get('company_address') }}</p>
@@ -405,6 +408,7 @@
         {{ settings.get('company_name', '') }}
         {% if settings.get('company_phone') %} | {{ settings.get('company_phone') }}{% endif %}
         {% if settings.get('company_email') %} | {{ settings.get('company_email') }}{% endif %}
+        {% if settings.get('pdf_footer_text') %} | {{ settings.get('pdf_footer_text') }}{% endif %}
     </div>
 </div>
 
@@ -449,6 +453,7 @@
 <script>
 // مفتاح localStorage مشترك مع المحرر — يقرأ التوقيع والختم منه مباشرة
 const SEP_KEY = 'sep_company';
+const SEP_SETTINGS_STAMP = '{{ settings.get("company_stamp", "") | e }}';
 let sepSigPad;
 
 function sepToggle() { document.getElementById('sepPanel').classList.toggle('open'); }
@@ -511,15 +516,14 @@ function sepSave(updates) {
 function sepLoad() {
     try {
         const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}');
-        // تحميل الختم
-        if (data.stamp) {
+        const stampSrc = data.stamp || SEP_SETTINGS_STAMP || null;
+        if (stampSrc) {
             const img = document.getElementById('sepStampEditorImg');
-            img.src = data.stamp; img.style.display = 'block';
+            img.src = stampSrc; img.style.display = 'block';
             document.getElementById('sepStampPh').style.display = 'none';
-            document.getElementById('sepRemoveStampBtn').style.display = 'block';
-            sepShowInDoc('docStampImg', data.stamp);
+            document.getElementById('sepRemoveStampBtn').style.display = data.stamp ? 'block' : 'none';
+            sepShowInDoc('docStampImg', stampSrc);
         }
-        // تحميل التوقيع
         if (data.signature) { sepShowInDoc('docSigImg', data.signature); }
     } catch(e) {}
 }

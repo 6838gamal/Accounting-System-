@@ -216,6 +216,9 @@
     <!-- ترويسة -->
     <div class="header">
         <div class="company-info">
+            {% if settings.get('company_logo') %}
+            <img src="{{ settings.get('company_logo') }}" style="max-height:70px; max-width:160px; object-fit:contain; margin-bottom:8px; display:block;">
+            {% endif %}
             <h1>{{ settings.get('company_name', 'اسم الشركة') }}</h1>
             {% if settings.get('company_address') %}
             <p>{{ settings.get('company_address') }}</p>
@@ -328,7 +331,7 @@
             <div style="text-align:center; min-height:72px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
                 <img id="docSigImg" style="display:none; max-width:120px; max-height:65px; object-fit:contain;">
             </div>
-            <div class="sig-line">{{ settings.get('company_name', '') }}</div>
+            <div class="sig-line">{{ settings.get('pdf_signatory_title', 'المدير العام') }}</div>
         </div>
     </div>
 
@@ -337,6 +340,7 @@
         {{ settings.get('company_name', '') }}
         {% if settings.get('company_phone') %} | {{ settings.get('company_phone') }}{% endif %}
         {% if settings.get('company_email') %} | {{ settings.get('company_email') }}{% endif %}
+        {% if settings.get('pdf_footer_text') %} | {{ settings.get('pdf_footer_text') }}{% endif %}
     </div>
 </div>
 
@@ -379,7 +383,9 @@
     </div>
 </div>
 <script>
-const SEP_KEY = 'sep_company'; let sepSigPad;
+const SEP_KEY = 'sep_company';
+const SEP_SETTINGS_STAMP = '{{ settings.get("company_stamp", "") | e }}';
+let sepSigPad;
 function sepToggle() { document.getElementById('sepPanel').classList.toggle('open'); }
 function sepInitCanvas() { const c = document.getElementById('sepSigCanvas'), dpr = window.devicePixelRatio || 1; c.width = c.offsetWidth * dpr; c.height = 100 * dpr; c.getContext('2d').scale(dpr, dpr); sepSigPad = new SignaturePad(c, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 }); }
 function sepHandleStamp(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(ev) { const src = ev.target.result; const img = document.getElementById('sepStampEditorImg'); img.src = src; img.style.display = 'block'; document.getElementById('sepStampPh').style.display = 'none'; document.getElementById('sepRemoveStampBtn').style.display = 'block'; sepShowInDoc('docStampImg', src); sepSave({ stamp: src }); }; reader.readAsDataURL(file); }
@@ -387,7 +393,20 @@ function sepRemoveStamp() { const img = document.getElementById('sepStampEditorI
 function sepApplySig() { if (!sepSigPad || sepSigPad.isEmpty()) { alert('ارسم التوقيع أولاً'); return; } const src = sepSigPad.toDataURL('image/png'); sepShowInDoc('docSigImg', src); sepSave({ signature: src }); sepToggle(); }
 function sepShowInDoc(id, src) { const el = document.getElementById(id); if (!el) return; if (src) { el.src = src; el.style.display = 'inline-block'; } else { el.src = ''; el.style.display = 'none'; } }
 function sepSave(updates) { try { const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}'); Object.assign(data, updates); if (updates.stamp === null) delete data.stamp; if (updates.signature === null) delete data.signature; localStorage.setItem(SEP_KEY, JSON.stringify(data)); } catch(e) {} }
-function sepLoad() { try { const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}'); if (data.stamp) { const img = document.getElementById('sepStampEditorImg'); img.src = data.stamp; img.style.display = 'block'; document.getElementById('sepStampPh').style.display = 'none'; document.getElementById('sepRemoveStampBtn').style.display = 'block'; sepShowInDoc('docStampImg', data.stamp); } if (data.signature) { sepShowInDoc('docSigImg', data.signature); } } catch(e) {} }
+function sepLoad() {
+    try {
+        const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}');
+        const stampSrc = data.stamp || SEP_SETTINGS_STAMP || null;
+        if (stampSrc) {
+            const img = document.getElementById('sepStampEditorImg');
+            img.src = stampSrc; img.style.display = 'block';
+            document.getElementById('sepStampPh').style.display = 'none';
+            document.getElementById('sepRemoveStampBtn').style.display = data.stamp ? 'block' : 'none';
+            sepShowInDoc('docStampImg', stampSrc);
+        }
+        if (data.signature) { sepShowInDoc('docSigImg', data.signature); }
+    } catch(e) {}
+}
 window.addEventListener('load', function() { sepInitCanvas(); sepLoad(); });
 </script>
 

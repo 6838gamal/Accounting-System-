@@ -149,6 +149,9 @@
     <!-- ترويسة -->
     <div class="header">
         <div>
+            {% if settings.get('company_logo') %}
+            <img src="{{ settings.get('company_logo') }}" style="max-height:65px; max-width:150px; object-fit:contain; margin-bottom:6px; display:block;">
+            {% endif %}
             <div class="company-name">{{ settings.get('company_name', 'اسم الشركة') }}</div>
             <div class="company-sub">
                 {% if settings.get('company_address') %}<div>{{ settings.get('company_address') }}</div>{% endif %}
@@ -305,6 +308,7 @@
 
 <script>
 const SEP_KEY = 'sep_company';
+const SEP_SETTINGS_STAMP = '{{ settings.get("company_stamp", "") | e }}';
 let sepSigPad;
 function sepToggle() { document.getElementById('sepPanel').classList.toggle('open'); }
 function sepInitCanvas() {
@@ -356,12 +360,13 @@ function sepSave(updates) {
 function sepLoad() {
     try {
         const data = JSON.parse(localStorage.getItem(SEP_KEY) || '{}');
-        if (data.stamp) {
+        const stampSrc = data.stamp || SEP_SETTINGS_STAMP || null;
+        if (stampSrc) {
             const img = document.getElementById('sepStampEditorImg');
-            img.src = data.stamp; img.style.display = 'block';
+            img.src = stampSrc; img.style.display = 'block';
             document.getElementById('sepStampPh').style.display = 'none';
-            document.getElementById('sepRemoveStampBtn').style.display = 'block';
-            sepShowInDoc('docStampImg', data.stamp);
+            document.getElementById('sepRemoveStampBtn').style.display = data.stamp ? 'block' : 'none';
+            sepShowInDoc('docStampImg', stampSrc);
         }
         if (data.signature) { sepShowInDoc('docSigImg', data.signature); }
     } catch(e) {}
