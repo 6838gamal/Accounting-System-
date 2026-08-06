@@ -4,7 +4,7 @@
 import logging
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates as _shared_templates
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.dependencies import get_db
@@ -13,7 +13,7 @@ from app.services.activity_service import ActivityService
 from app.models.client import ClientType
 
 router = APIRouter(prefix="/clients", tags=["clients"])
-templates = Jinja2Templates(directory="app/templates")
+templates = _shared_templates
 logger = logging.getLogger(__name__)
 
 _VALID_TYPES = {t.value for t in ClientType}

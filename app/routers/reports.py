@@ -5,7 +5,7 @@ from datetime import date, datetime
 from io import BytesIO
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates as _shared_templates
 from sqlalchemy.orm import Session
 from typing import Optional
 import openpyxl
@@ -14,7 +14,7 @@ from app.dependencies import get_db
 from app.services.report_service import ReportService
 
 router = APIRouter(prefix="/reports", tags=["reports"])
-templates = Jinja2Templates(directory="app/templates")
+templates = _shared_templates
 
 
 def _parse_date(value: Optional[str], fallback: date) -> date:

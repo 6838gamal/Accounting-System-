@@ -5,7 +5,7 @@ import logging
 from urllib.parse import quote_plus
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates as _shared_templates
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -14,7 +14,7 @@ from app.models.user import User, UserRole
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/users", tags=["users"])
-templates = Jinja2Templates(directory="app/templates")
+templates = _shared_templates
 security_logger = logging.getLogger("security")
 
 PASSWORD_MIN_LENGTH = 8

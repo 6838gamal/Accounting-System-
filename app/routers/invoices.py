@@ -7,7 +7,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates as _shared_templates
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.dependencies import get_db
@@ -18,7 +18,7 @@ from app.models.client import Client
 from app.models.invoice import InvoiceStatus
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
-templates = Jinja2Templates(directory="app/templates")
+templates = _shared_templates
 logger = logging.getLogger(__name__)
 
 _VALID_STATUSES = {s.value for s in InvoiceStatus}

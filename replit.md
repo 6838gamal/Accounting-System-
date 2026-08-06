@@ -1,48 +1,54 @@
 # نظام المحاسبة السحابي
 
-A cloud-based Arabic accounting system built with FastAPI, SQLAlchemy, and Bootstrap 5.
+نظام محاسبي ويب احترافي مبني بـ FastAPI و SQLAlchemy و Bootstrap 5 (واجهة عربية).
 
-## Stack
-
-- **Backend**: Python 3.12 + FastAPI + SQLAlchemy 2.x
-- **Templates**: Jinja2 + Bootstrap 5 (RTL/Arabic)
-- **Database**: SQLite (`accounting.db`) with Alembic migrations
-- **Auth**: Session-based (itsdangerous)
-- **PDF**: ReportLab / xhtml2pdf / WeasyPrint
-- **Excel**: OpenPyXL
-- **Charts**: Chart.js
-
-## How to run
+## تشغيل التطبيق
 
 ```bash
 python main.py
 ```
 
-App runs on port 5000. Default login: **admin / admin123**
+التطبيق يعمل على المنفذ **5000**.
 
-## Environment variables required
+## بيانات الدخول الافتراضية
 
-| Variable | Description |
-|---|---|
-| `SECRET_KEY` | App HMAC secret (auto-generated for dev) |
-| `SESSION_SECRET` | Session signing key (≥32 chars) |
+- **المستخدم:** admin
+- **كلمة المرور:** admin123
 
-## Key routes
+## المكدس التقني
 
-- `/` → dashboard
-- `/contracts` → contract list
-- `/contracts/{id}` → contract detail
-- `/contracts/{id}/print` → print view (right sig + left sig + stamp centre)
-- `/contracts/{id}/layout-editor` → layout editor (company signature only, right-aligned)
-- `/contracts/{id}/pdf` → download PDF
+| المكون | التقنية |
+|--------|---------|
+| Backend | Python 3.12 + FastAPI |
+| Templates | Jinja2 + Bootstrap 5 |
+| Database | SQLite + SQLAlchemy 2.x |
+| Migrations | Alembic |
+| Auth | Session-based (itsdangerous) |
+| PDF | ReportLab |
+| Excel | OpenPyXL |
+| Charts | Chart.js |
 
-## Contract signature layout
+## هيكل المشروع
 
-- **Print / طباعة**: Three-part footer — company signature (right), client signature (left), stamp (centre).
-- **Layout editor / محرر**: Only the company (first-party) signature shown, right-aligned. Stamp not shown in editor.
-- **PDF**: Controlled by `show_signatures` flag; two-column signature table in `app/templates/pdf/contract.html`.
+```
+app/
+├── routers/          # مسارات الصفحات وAPI
+├── templates/        # قوالب HTML (Jinja2)
+├── models/           # نماذج قاعدة البيانات
+├── services/         # منطق الأعمال
+├── templates_config.py  # قالب مشترك مع حقن إعدادات تلقائي
+├── main.py           # تهيئة FastAPI
+├── database.py       # اتصال قاعدة البيانات
+└── config.py         # إعدادات التطبيق
+main.py               # نقطة دخول uvicorn
+```
+
+## الإصلاحات المُطبَّقة
+
+- **حقن الإعدادات تلقائياً**: `app/templates_config.py` يوفّر `AppTemplates` التي تُدرج إعدادات الشركة (اسم، عملة، لون...) في كل صفحة دون الحاجة لتمريرها يدوياً في كل route.
+- **نموذج العقد**: أضيف عرض رمز العملة في حقل القيمة، وكتلة عرض رسائل الخطأ.
+- **الطباعة A4**: إزالة `min-height: 297mm` في وضع `@media print` بحيث لا تمتد الصفحة قسراً، مع الإبقاء على padding مناسب.
 
 ## User preferences
 
-- Keep existing project structure — do not restructure or migrate.
-- Arabic RTL layout throughout.
+- اللغة العربية في الواجهة والكود.
