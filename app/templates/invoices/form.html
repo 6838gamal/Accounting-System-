@@ -84,16 +84,15 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label">نسبة الضريبة (%)</label>
-                        <input type="number" name="tax_rate" id="tax_rate" class="form-control"
+                        <input type="text" inputmode="decimal" name="tax_rate" id="tax_rate" class="form-control"
                             value="{{ invoice.tax_rate if invoice else (default_tax_rate or 0) }}"
-                            min="0" max="100" step="0.01"
-                            oninput="calculateTotals()">
+                            autocomplete="off" oninput="calculateTotals()">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">الخصم</label>
-                        <input type="number" name="discount" id="discount" class="form-control"
+                        <input type="text" inputmode="decimal" name="discount" id="discount" class="form-control"
                             value="{{ invoice.discount if invoice else 0 }}"
-                            min="0" step="0.01" oninput="calculateTotals()">
+                            autocomplete="off" oninput="calculateTotals()">
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between mb-2">

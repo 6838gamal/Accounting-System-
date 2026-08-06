@@ -115,37 +115,74 @@ function updateItem(index, field, value) {
 function renderItems() {
     const tbody = document.getElementById('items-tbody');
     if (!tbody) return;
+    const isMobile = window.innerWidth <= 640;
     tbody.innerHTML = '';
     itemsData.forEach((item, i) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <input type="text" class="form-control form-control-sm"
-                    value="${escapeHtml(item.description || '')}"
-                    onchange="updateItem(${i}, 'description', this.value)"
-                    placeholder="وصف البند" required>
-            </td>
-            <td style="width:90px;min-width:80px">
-                <input type="number" class="form-control form-control-sm"
-                    value="${item.quantity}" min="0.01" step="0.01"
-                    inputmode="decimal"
-                    onchange="updateItem(${i}, 'quantity', this.value)">
-            </td>
-            <td style="width:130px;min-width:110px">
-                <input type="number" class="form-control form-control-sm"
-                    value="${item.unit_price}" min="0" step="0.01"
-                    inputmode="decimal"
-                    onchange="updateItem(${i}, 'unit_price', this.value)">
-            </td>
-            <td style="width:120px;min-width:100px" class="text-end fw-semibold item-total">
-                ${formatNumber((item.quantity || 0) * (item.unit_price || 0))}
-            </td>
-            <td style="width:46px;min-width:40px" class="text-center">
-                <button type="button" class="btn btn-sm btn-outline-danger p-1"
-                    onclick="removeItem(${i})">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </td>`;
+        if (isMobile) {
+            // على الجوال: كل بند كبطاقة عمودية
+            tr.innerHTML = `
+                <td colspan="5" style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">
+                    <input type="text" class="form-control form-control-sm mb-2"
+                        value="${escapeHtml(item.description || '')}"
+                        onblur="updateItem(${i}, 'description', this.value)"
+                        placeholder="وصف البند" required>
+                    <div style="display:flex;gap:8px;align-items:flex-end;">
+                        <div style="flex:1;">
+                            <div style="font-size:11px;color:#64748b;margin-bottom:3px;">الكمية</div>
+                            <input type="text" inputmode="decimal" class="form-control form-control-sm"
+                                value="${item.quantity}"
+                                onblur="updateItem(${i}, 'quantity', this.value)">
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:11px;color:#64748b;margin-bottom:3px;">السعر</div>
+                            <input type="text" inputmode="decimal" class="form-control form-control-sm"
+                                value="${item.unit_price}"
+                                onblur="updateItem(${i}, 'unit_price', this.value)">
+                        </div>
+                        <div style="flex:1;text-align:center;">
+                            <div style="font-size:11px;color:#64748b;margin-bottom:3px;">الإجمالي</div>
+                            <div class="fw-semibold item-total" style="padding:6px 0;font-size:13px;">
+                                ${formatNumber((item.quantity || 0) * (item.unit_price || 0))}
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-danger p-1"
+                                onclick="removeItem(${i})" style="margin-bottom:1px;">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </td>`;
+        } else {
+            // سطح المكتب: عرض الجدول الأصلي
+            tr.innerHTML = `
+                <td>
+                    <input type="text" class="form-control form-control-sm"
+                        value="${escapeHtml(item.description || '')}"
+                        onblur="updateItem(${i}, 'description', this.value)"
+                        placeholder="وصف البند" required>
+                </td>
+                <td style="width:90px;min-width:80px">
+                    <input type="text" inputmode="decimal" class="form-control form-control-sm"
+                        value="${item.quantity}"
+                        onblur="updateItem(${i}, 'quantity', this.value)">
+                </td>
+                <td style="width:130px;min-width:110px">
+                    <input type="text" inputmode="decimal" class="form-control form-control-sm"
+                        value="${item.unit_price}"
+                        onblur="updateItem(${i}, 'unit_price', this.value)">
+                </td>
+                <td style="width:120px;min-width:100px" class="text-end fw-semibold item-total">
+                    ${formatNumber((item.quantity || 0) * (item.unit_price || 0))}
+                </td>
+                <td style="width:46px;min-width:40px" class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger p-1"
+                        onclick="removeItem(${i})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>`;
+        }
         tbody.appendChild(tr);
     });
     updateItemsJson();

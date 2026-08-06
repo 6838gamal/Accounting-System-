@@ -376,13 +376,16 @@ body {
         flex-wrap: wrap;
     }
 
-    /* جداول: تمرير أفقي بدلاً من التكسر */
-    .card-body {
+    /* تمرير أفقي فقط للبطاقات التي تحتوي جداول بيانات — لا يطبّق على نماذج الإدخال */
+    .card-body:has(> .table),
+    .card-body:has(> .table-scroll-wrapper),
+    .card-body.p-0:has(.table),
+    .card-body.scroll-x {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
-    /* استثناء: بطاقات بدون جدول لا تحتاج تمريراً */
-    .card-body.no-scroll { overflow-x: visible; }
+    /* الاحتياط للمتصفحات القديمة — استثناء صريح لنماذج الإدخال */
+    .card-body.no-scroll { overflow-x: visible !important; }
 
     .table {
         min-width: 540px;
