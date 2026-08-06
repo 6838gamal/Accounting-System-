@@ -85,7 +85,7 @@ async def create_receipt_voucher(
     request: Request, db: Session = Depends(get_db),
     voucher_number: str = Form(...), voucher_date: str = Form(...),
     received_from: str = Form(...), amount: str = Form(...),
-    method: str = Form("cash"), client_id: Optional[int] = Form(None),
+    method: str = Form("cash"), client_id: Optional[str] = Form(None),
     description: Optional[str] = Form(None), reference: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
 ):
@@ -119,9 +119,17 @@ async def create_receipt_voucher(
     if method not in _VALID_METHODS:
         return _form_error("طريقة الدفع غير صالحة.")
 
+    # تحويل client_id من نص إلى رقم (القيمة الفارغة = لا عميل)
+    parsed_client_id: Optional[int] = None
+    if client_id and client_id.strip():
+        try:
+            parsed_client_id = int(client_id.strip())
+        except (ValueError, TypeError):
+            return _form_error("معرّف العميل غير صالح.")
+
     # التحقق من العميل إذا حُدِّد
-    if client_id:
-        client = db.query(Client).filter(Client.id == client_id, Client.is_active == True).first()
+    if parsed_client_id:
+        client = db.query(Client).filter(Client.id == parsed_client_id, Client.is_active == True).first()
         if not client:
             return _form_error("العميل المحدد غير موجود أو غير نشط.")
 
@@ -135,7 +143,7 @@ async def create_receipt_voucher(
             voucher_number=voucher_number, voucher_date=parsed_date,
             received_from=received_from, amount=d_amount,
             method=VoucherPaymentMethod(method),
-            client_id=client_id if client_id else None,
+            client_id=parsed_client_id,
             description=description or None, reference=reference or None,
             notes=notes or None, created_by=request.session["user_id"],
         )
