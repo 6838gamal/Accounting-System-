@@ -21,6 +21,7 @@
 {% endif %}
 
 <form method="post" action="/settings" enctype="multipart/form-data">
+    {{ csrf_input|safe }}
     <div class="row g-3">
 
         <!-- ═══ بيانات الشركة ═══ -->

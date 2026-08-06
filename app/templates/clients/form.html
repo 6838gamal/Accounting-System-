@@ -15,6 +15,7 @@
 <div class="card">
     <div class="card-body">
         <form method="post" action="{{ '/clients/' + client.id|string + '/edit' if client else '/clients/new' }}">
+    {{ csrf_input|safe }}
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">الاسم <span class="text-danger">*</span></label>

@@ -16,6 +16,7 @@
         </div>
         {% endif %}
         <form method="post" action="/expenses/new">
+    {{ csrf_input|safe }}
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">العنوان <span class="text-danger">*</span></label>

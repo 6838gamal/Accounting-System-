@@ -18,6 +18,7 @@
 <div class="card">
     <div class="card-body">
         <form method="post" action="{{ '/contracts/' + contract.id|string + '/edit' if contract else '/contracts/new' }}">
+    {{ csrf_input|safe }}
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">العميل <span class="text-danger">*</span></label>

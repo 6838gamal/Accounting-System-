@@ -26,6 +26,7 @@
               action="{{ '/users/' + user.id|string + '/edit' if user else '/users/new' }}"
               novalidate
               id="userForm">
+    {{ csrf_input|safe }}
 
             <div class="row g-3">
 

@@ -1,7 +1,7 @@
 """
 نموذج سجل العمليات
 """
-from datetime import datetime
+from datetime import timezone, datetime
 from sqlalchemy import String, DateTime, Text, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
@@ -17,7 +17,7 @@ class ActivityLog(Base):
     record_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     details: Mapped[str | None] = mapped_column(Text, nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: __import__("datetime").datetime.now(__import__("datetime").timezone.utc).replace(tzinfo=None), nullable=False)
 
     # العلاقات
     user = relationship("User", back_populates="activity_logs")

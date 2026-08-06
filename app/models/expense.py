@@ -2,7 +2,7 @@
 نموذج المصروفات
 """
 import enum
-from datetime import date, datetime
+from datetime import timezone, date, datetime
 from decimal import Decimal
 from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, Date, Numeric, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -26,7 +26,7 @@ class Expense(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     receipt_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[ExpenseStatus] = mapped_column(SAEnum(ExpenseStatus), default=ExpenseStatus.PENDING, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: __import__("datetime").datetime.now(__import__("datetime").timezone.utc).replace(tzinfo=None), nullable=False)
     created_by: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
 
     def __repr__(self) -> str:

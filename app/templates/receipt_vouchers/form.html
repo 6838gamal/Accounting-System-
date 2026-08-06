@@ -17,6 +17,7 @@
         </div>
         {% endif %}
         <form method="post" action="/receipt-vouchers/new">
+    {{ csrf_input|safe }}
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">رقم السند <span class="text-danger">*</span></label>

@@ -44,6 +44,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 # ─── Middleware ─────────────────────────────────────────────────────────────
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.middleware.request_size import RequestSizeLimitMiddleware
+from app.middleware.csrf_middleware import CSRFMiddleware
 
 
 # ─── Lifespan ───────────────────────────────────────────────────────────────
@@ -104,7 +105,10 @@ app.add_middleware(
     is_production=not settings.DEBUG,
 )
 
-# 4. جلسات المستخدم
+# 4. حماية CSRF — بعد الجلسات مباشرة
+app.add_middleware(CSRFMiddleware)
+
+# 5. جلسات المستخدم
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.effective_session_key,

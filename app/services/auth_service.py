@@ -1,7 +1,7 @@
 """
 خدمة المصادقة وإدارة المستخدمين
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
@@ -31,7 +31,7 @@ class AuthService:
         if not self.verify_password(password, user.password_hash):
             return None
         # تحديث وقت آخر دخول
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc).replace(tzinfo=None)
         self.db.commit()
         return user
 

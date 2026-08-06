@@ -23,6 +23,7 @@
 <form method="post"
       action="{% if invoice %}/invoices/{{ invoice.id }}/edit{% else %}/invoices/new{% endif %}"
       id="invoiceForm">
+    {{ csrf_input|safe }}
     <div class="row g-3">
         <div class="col-lg-8">
             <div class="card mb-3">

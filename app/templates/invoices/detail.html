@@ -109,6 +109,7 @@
             <div class="card-header"><i class="bi bi-credit-card me-2"></i>تسجيل دفعة</div>
             <div class="card-body">
                 <form method="post" action="/invoices/{{ invoice.id }}/payment">
+    {{ csrf_input|safe }}
                     <div class="mb-2">
                         <label class="form-label">المبلغ</label>
                         <input type="number" name="amount" class="form-control" step="0.01"

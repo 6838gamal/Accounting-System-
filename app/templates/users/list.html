@@ -127,6 +127,7 @@
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
                 <form id="deleteForm" method="post" action="">
+    {{ csrf_input|safe }}
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-trash me-1"></i>حذف
                     </button>

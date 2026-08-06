@@ -106,6 +106,7 @@
             <div class="topbar-user">
                 <span class="text-muted small me-2">{{ request.session.get('full_name', '') }}</span>
                 <form method="post" action="/auth/logout" class="d-inline">
+                    {{ csrf_input|safe }}
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                         <i class="bi bi-box-arrow-right"></i> خروج
                     </button>

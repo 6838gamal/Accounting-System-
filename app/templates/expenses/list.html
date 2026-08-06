@@ -42,9 +42,11 @@
                 <td>
                     {% if e.status.value == 'pending' %}
                     <form method="post" action="/expenses/{{ e.id }}/approve" class="d-inline">
+    {{ csrf_input|safe }}
                         <button type="submit" class="btn btn-sm btn-success" title="اعتماد"><i class="bi bi-check-lg"></i></button>
                     </form>
                     <form method="post" action="/expenses/{{ e.id }}/reject" class="d-inline">
+    {{ csrf_input|safe }}
                         <button type="submit" class="btn btn-sm btn-danger" title="رفض"><i class="bi bi-x-lg"></i></button>
                     </form>
                     {% endif %}

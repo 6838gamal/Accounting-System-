@@ -2,7 +2,7 @@
 نموذج سند المصروف
 """
 import enum
-from datetime import date, datetime
+from datetime import timezone, date, datetime
 from decimal import Decimal
 from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, Date, Numeric, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -31,7 +31,7 @@ class ExpenseVoucher(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)     # البيان
     reference: Mapped[str | None] = mapped_column(String(100), nullable=True) # رقم المرجع
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: __import__("datetime").datetime.now(__import__("datetime").timezone.utc).replace(tzinfo=None), nullable=False)
     created_by: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
 
     creator = relationship("User", foreign_keys=[created_by])

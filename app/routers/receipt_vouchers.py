@@ -32,7 +32,7 @@ METHOD_LABELS = {
 def _next_voucher_number(db: Session) -> str:
     last = db.query(ReceiptVoucher).order_by(ReceiptVoucher.id.desc()).first()
     next_id = (last.id + 1) if last else 1
-    return f"RV-{datetime.utcnow().year}-{next_id:04d}"
+    return f"RV-{datetime.now().year}-{next_id:04d}"
 
 
 def _require_login(request: Request):
