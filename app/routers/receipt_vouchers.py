@@ -57,7 +57,9 @@ async def list_receipt_vouchers(
     query = db.query(ReceiptVoucher)
     total = query.count()
     vouchers = query.order_by(ReceiptVoucher.voucher_date.desc()).offset((page - 1) * 20).limit(20).all()
-    total_amount = sum(float(v.amount) for v in db.query(ReceiptVoucher).all())
+    # استخدام func.sum بدلاً من تحميل جميع السجلات في الذاكرة
+    from sqlalchemy import func as _func
+    total_amount = float(db.query(_func.sum(ReceiptVoucher.amount)).scalar() or 0)
     return templates.TemplateResponse("receipt_vouchers/list.html", {
         "request": request, "vouchers": vouchers, "total": total,
         "page": page, "total_pages": max(1, (total + 19) // 20),

@@ -22,10 +22,10 @@ class Expense(Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
-    expense_date: Mapped[date] = mapped_column(Date, nullable=False)
+    expense_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     receipt_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    status: Mapped[ExpenseStatus] = mapped_column(SAEnum(ExpenseStatus), default=ExpenseStatus.PENDING, nullable=False)
+    status: Mapped[ExpenseStatus] = mapped_column(SAEnum(ExpenseStatus), default=ExpenseStatus.PENDING, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: __import__("datetime").datetime.now(__import__("datetime").timezone.utc).replace(tzinfo=None), nullable=False)
     created_by: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
 

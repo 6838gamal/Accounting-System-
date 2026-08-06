@@ -34,6 +34,11 @@ async def reports_index(request: Request):
     return templates.TemplateResponse("reports/index.html", {"request": request})
 
 
+import logging
+_logger = logging.getLogger(__name__)
+
+
+
 @router.get("/sales", response_class=HTMLResponse)
 async def sales_report(
     request: Request, db: Session = Depends(get_db),
@@ -44,8 +49,18 @@ async def sales_report(
     today = date.today()
     start = _parse_date(start_date, date(today.year, today.month, 1))
     end = _parse_date(end_date, today)
-    report = ReportService(db).get_sales_report(start, end)
-    return templates.TemplateResponse("reports/sales.html", {"request": request, "report": report})
+    context: dict = {"request": request}
+    try:
+        context["report"] = ReportService(db).get_sales_report(start, end)
+    except ValueError as exc:
+        _logger.warning("تحقق تاريخ المبيعات | %s", exc)
+        context["report"] = {
+            "start_date": start, "end_date": end,
+            "total_invoices": 0, "total_invoiced": 0.0,
+            "total_paid": 0.0, "total_pending": 0.0, "invoices": [],
+        }
+        context["error"] = str(exc)
+    return templates.TemplateResponse("reports/sales.html", context)
 
 
 @router.get("/clients", response_class=HTMLResponse)
@@ -58,8 +73,14 @@ async def clients_report(
     today = date.today()
     start = _parse_date(start_date, date(today.year, 1, 1))
     end = _parse_date(end_date, today)
-    data = ReportService(db).get_client_report(start, end)
-    return templates.TemplateResponse("reports/clients.html", {"request": request, "data": data, "start": start, "end": end})
+    context: dict = {"request": request, "start": start, "end": end}
+    try:
+        context["data"] = ReportService(db).get_client_report(start, end)
+    except ValueError as exc:
+        _logger.warning("تحقق تاريخ العملاء | %s", exc)
+        context["data"] = []
+        context["error"] = str(exc)
+    return templates.TemplateResponse("reports/clients.html", context)
 
 
 @router.get("/expenses", response_class=HTMLResponse)
@@ -72,8 +93,17 @@ async def expenses_report(
     today = date.today()
     start = _parse_date(start_date, date(today.year, today.month, 1))
     end = _parse_date(end_date, today)
-    report = ReportService(db).get_expense_report(start, end)
-    return templates.TemplateResponse("reports/expenses.html", {"request": request, "report": report})
+    context: dict = {"request": request}
+    try:
+        context["report"] = ReportService(db).get_expense_report(start, end)
+    except ValueError as exc:
+        _logger.warning("تحقق تاريخ المصروفات | %s", exc)
+        context["report"] = {
+            "start_date": start, "end_date": end,
+            "expenses": [], "by_category": {}, "total": 0.0,
+        }
+        context["error"] = str(exc)
+    return templates.TemplateResponse("reports/expenses.html", context)
 
 
 @router.get("/profit-loss", response_class=HTMLResponse)
@@ -86,8 +116,17 @@ async def profit_loss_report(
     today = date.today()
     start = _parse_date(start_date, date(today.year, 1, 1))
     end = _parse_date(end_date, today)
-    report = ReportService(db).get_profit_loss(start, end)
-    return templates.TemplateResponse("reports/profit_loss.html", {"request": request, "report": report})
+    context: dict = {"request": request}
+    try:
+        context["report"] = ReportService(db).get_profit_loss(start, end)
+    except ValueError as exc:
+        _logger.warning("تحقق تاريخ الأرباح والخسائر | %s", exc)
+        context["report"] = {
+            "start_date": start, "end_date": end,
+            "revenue": 0.0, "expenses": 0.0, "profit": 0.0,
+        }
+        context["error"] = str(exc)
+    return templates.TemplateResponse("reports/profit_loss.html", context)
 
 
 @router.get("/sales/excel")
@@ -100,7 +139,11 @@ async def sales_excel(
     today = date.today()
     start = _parse_date(start_date, date(today.year, today.month, 1))
     end = _parse_date(end_date, today)
-    report = ReportService(db).get_sales_report(start, end)
+    try:
+        report = ReportService(db).get_sales_report(start, end)
+    except ValueError as exc:
+        from fastapi.responses import HTMLResponse as _HTML
+        return _HTML(content=f"<p>خطأ في التاريخ: {exc}</p>", status_code=400)
 
     wb = openpyxl.Workbook()
     ws = wb.active

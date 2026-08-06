@@ -38,7 +38,9 @@ async def list_expenses(
         status = None
     total = query.count()
     expenses = query.order_by(Expense.expense_date.desc()).offset((page - 1) * 20).limit(20).all()
-    total_amount = sum(float(e.amount) for e in db.query(Expense).filter(Expense.status == ExpenseStatus.APPROVED).all())
+    # استخدام func.sum بدلاً من تحميل جميع السجلات في الذاكرة
+    from sqlalchemy import func as _func
+    total_amount = float(db.query(_func.sum(Expense.amount)).filter(Expense.status == ExpenseStatus.APPROVED).scalar() or 0)
     return templates.TemplateResponse("expenses/list.html", {
         "request": request, "expenses": expenses, "total": total,
         "page": page, "total_pages": max(1, (total + 19) // 20),

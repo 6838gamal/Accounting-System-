@@ -43,7 +43,7 @@ def _redirect_forbidden(request: Request):
 def _count_active_admins(db: Session) -> int:
     return (
         db.query(User)
-        .filter(User.role == UserRole.admin, User.is_active == True)
+        .filter(User.role == UserRole.ADMIN, User.is_active == True)
         .count()
     )
 
@@ -219,7 +219,7 @@ async def update_user(
             return form_error("لا يمكنك تغيير دور حسابك الخاص")
 
     # Prevent removing last active admin
-    if user.role == UserRole.admin and (role != "admin" or not new_is_active):
+    if user.role == UserRole.ADMIN and (role != "admin" or not new_is_active):
         remaining = _count_active_admins(db)
         # If this user IS the last active admin, block
         if remaining <= 1:
@@ -275,7 +275,7 @@ async def delete_user(
         return RedirectResponse(url="/users?error=لا+يمكنك+حذف+حسابك+الخاص", status_code=302)
 
     # Prevent deleting last active admin
-    if user.role == UserRole.admin and user.is_active:
+    if user.role == UserRole.ADMIN and user.is_active:
         if _count_active_admins(db) <= 1:
             return RedirectResponse(
                 url="/users?error=لا+يمكن+حذف+المشرف+الوحيد+في+النظام", status_code=302

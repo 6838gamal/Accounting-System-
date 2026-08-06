@@ -50,3 +50,14 @@ class AppTemplates(Jinja2Templates):
 
 # نسخة واحدة مشتركة بين جميع الـ routers
 templates = AppTemplates(directory="app/templates")
+
+# إضافة دوال Python المفيدة إلى بيئة Jinja2
+templates.env.globals.update({
+    "enumerate": enumerate,
+    "zip": zip,
+    "range": range,
+    "len": len,
+    "abs": abs,
+    "min": min,
+    "max": max,
+})

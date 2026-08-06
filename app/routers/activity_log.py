@@ -1,7 +1,7 @@
 """
 مسارات سجل العمليات
 """
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.templates_config import templates as _shared_templates
 from sqlalchemy.orm import Session
@@ -16,7 +16,8 @@ templates = _shared_templates
 @router.get("", response_class=HTMLResponse)
 async def activity_log(
     request: Request, db: Session = Depends(get_db),
-    module: Optional[str] = None, page: int = 1,
+    module: Optional[str] = None,
+    page: int = Query(default=1, ge=1),
 ):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)

@@ -31,10 +31,17 @@ def _gen_number(db: Session) -> str:
     return f"{app_settings.QUOTE_PREFIX}-{datetime.now().year}-{n:04d}"
 
 
+_ROUND = lambda v: v.quantize(Decimal("0.01"), rounding=__import__("decimal").ROUND_HALF_UP)
+
+
 def _calc(items, tax_rate: Decimal, discount: Decimal):
-    subtotal = sum(Decimal(str(i.get("quantity", 1))) * Decimal(str(i.get("unit_price", 0))) for i in items)
-    tax = subtotal * (tax_rate / 100)
-    total = subtotal + tax - discount
+    """حساب مجاميع عرض الأسعار بدقة Decimal مع ROUND_HALF_UP."""
+    subtotal = _ROUND(sum(
+        _ROUND(Decimal(str(i.get("quantity", 1))) * Decimal(str(i.get("unit_price", 0))))
+        for i in items
+    ))
+    tax = _ROUND(subtotal * (tax_rate / 100))
+    total = _ROUND(subtotal + tax - discount)
     return subtotal, tax, max(total, Decimal("0"))
 
 

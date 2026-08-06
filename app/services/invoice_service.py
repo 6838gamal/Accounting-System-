@@ -19,13 +19,6 @@ class InvoiceService:
     def __init__(self, db: Session):
         self.db = db
 
-    def generate_number(self) -> str:
-        """توليد رقم فاتورة جديد — آمن من Race Conditions عبر قفل DB-level."""
-        year = datetime.now().year
-        # نستخدم max(id)+1 مع معالجة تعارض الـ unique constraint
-        last = self.db.query(func.max(Invoice.id)).scalar() or 0
-        return f"{settings.INVOICE_PREFIX}-{year}-{last + 1:04d}"
-
     def _generate_number_safe(self, attempt: int = 0) -> str:
         """رقم فاتورة مع دعم retry عند التعارض."""
         year = datetime.now().year

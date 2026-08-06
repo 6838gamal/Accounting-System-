@@ -11,9 +11,9 @@ class ActivityLog(Base):
     __tablename__ = "activity_logs"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     action: Mapped[str] = mapped_column(String(50), nullable=False)
-    module: Mapped[str] = mapped_column(String(50), nullable=False)
+    module: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     record_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     details: Mapped[str | None] = mapped_column(Text, nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)

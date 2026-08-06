@@ -21,9 +21,9 @@ class Payment(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     invoice_id: Mapped[int] = mapped_column(Integer, ForeignKey("invoices.id"), nullable=False)
-    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("clients.id"), nullable=False)
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("clients.id"), nullable=False, index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
-    payment_date: Mapped[date] = mapped_column(Date, nullable=False)
+    payment_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     method: Mapped[PaymentMethod] = mapped_column(SAEnum(PaymentMethod), default=PaymentMethod.CASH, nullable=False)
     reference: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
