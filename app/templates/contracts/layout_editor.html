@@ -792,7 +792,14 @@
 <script>
 const STORE_KEY = 'editor_contract_{{ contract.id }}';
 let sigPad = null;
-let currentColor = '#2563eb';
+
+/* ── قيم الإعدادات من قاعدة البيانات (تتقدم على localStorage) ── */
+const SETTINGS_COLOR     = '{{ settings.get("pdf_primary_color", "#2563eb") | e }}';
+const SETTINGS_STAMP     = '{{ settings.get("company_stamp", "")      | e }}';
+const SETTINGS_SIG       = '{{ settings.get("company_signature", "")  | e }}';
+const SETTINGS_LOGO      = '{{ settings.get("company_logo", "")       | e }}';
+
+let currentColor = SETTINGS_COLOR || '#2563eb';
 
 /* ── تهيئة ── */
 window.addEventListener('DOMContentLoaded', function () {
@@ -809,7 +816,7 @@ function initSigPad() {
     canvas.height = 88 * dpr;
     canvas.getContext('2d').scale(dpr, dpr);
     sigPad = new SignaturePad(canvas, {
-        penColor: '#0055cc',
+        penColor: SETTINGS_COLOR || '#0055cc',
         minWidth: 1,
         maxWidth: 2.5,
     });
@@ -969,15 +976,17 @@ function loadState() {
         const data = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
 
         if (data.template) setTemplate(data.template);
-        if (data.color) {
-            currentColor = data.color;
-            applyPrimary(data.color);
-            document.querySelectorAll('.color-swatch').forEach(s => {
-                s.classList.toggle('active', s.dataset.color === data.color);
-            });
-            const customPicker = document.querySelector('input[type=color].custom-color');
-            if (customPicker) customPicker.value = data.color;
-        }
+
+        /* اللون: الإعدادات تتقدم على localStorage */
+        const activeColor = SETTINGS_COLOR || data.color || '#2563eb';
+        currentColor = activeColor;
+        applyPrimary(activeColor);
+        document.querySelectorAll('.color-swatch').forEach(s => {
+            s.classList.toggle('active', s.dataset.color === activeColor);
+        });
+        const customPicker = document.querySelector('input[type=color].custom-color');
+        if (customPicker) customPicker.value = activeColor;
+
         if (data.fontSize) {
             document.getElementById('a4Page').style.fontSize = data.fontSize;
             const sel = document.querySelector('select[onchange*="setFontSize"]');
@@ -988,9 +997,15 @@ function loadState() {
             const wmInput = document.querySelector('input[oninput*="setWatermark"]');
             if (wmInput) wmInput.value = data.watermark;
         }
-        if (data.logo)      showLogo(data.logo);
-        if (data.stamp)     showStamp(data.stamp);
-        if (data.signature) showDocImg('docSigImg', data.signature);
+
+        /* الشعار والختم والتوقيع: الإعدادات تتقدم على localStorage */
+        const logoSrc  = SETTINGS_LOGO  || data.logo      || null;
+        const stampSrc = SETTINGS_STAMP || data.stamp     || null;
+        const sigSrc   = SETTINGS_SIG   || data.signature || null;
+
+        if (logoSrc)  showLogo(logoSrc);
+        if (stampSrc) showStamp(stampSrc);
+        if (sigSrc)   showDocImg('docSigImg', sigSrc);
     } catch(e) {}
 }
 </script>
