@@ -480,11 +480,37 @@
         }
 
         @media print {
+            @page { margin: 12mm 14mm; }
             .topbar, .controls-panel, .fab-print, .preview-divider { display: none !important; }
             body { overflow: auto; height: auto; background: #fff; }
             .editor-layout { margin-top: 0; height: auto; }
             .preview-area { padding: 0; background: #fff; }
-            .a4-page { box-shadow: none; border-radius: 0; width: 100%; min-height: auto; }
+            .a4-page { box-shadow: none; border-radius: 0; width: 100%; min-height: auto; padding: 24px 32px; }
+
+            /* تقليص هوامش المحتوى */
+            .doc-header        { padding-bottom: 12px; margin-bottom: 14px; }
+            .header-divider    { margin-bottom: 14px; }
+            .contract-title-block { margin-bottom: 14px; padding: 8px; }
+            .parties-row       { margin-bottom: 12px; }
+            .party-box         { padding: 10px 12px; }
+            .details-table     { margin-bottom: 12px; }
+            .details-table th,
+            .details-table td  { padding: 6px 10px; }
+            .doc-section       { margin-bottom: 12px; }
+            .doc-section-body  { padding: 10px; line-height: 1.6; }
+            .doc-section-title { padding: 5px 10px; }
+
+            /* التوقيعات والختم — يبقيان معاً ولا ينقسمان */
+            .signatures-wrapper {
+                margin-top: 16px;
+                padding-top: 12px;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            .sig-block         { padding: 10px 12px 8px; }
+            .sig-block .sig-line { margin-top: 24px; }
+            .stamp-wrapper     { margin-top: 10px; }
+            .stamp-box         { padding: 8px 18px; }
         }
     </style>
 </head>
