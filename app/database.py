@@ -42,10 +42,10 @@ def get_db():
 
 
 def init_db():
-    """تهيئة جداول قاعدة البيانات"""
+    """تهيئة جداول قاعدة البيانات — يجب استيراد جميع النماذج قبل create_all"""
     from app.models import (  # noqa: F401
         user, client, contract, quotation,
         invoice, payment, expense, settings as settings_model,
-        activity_log
+        activity_log, expense_voucher, receipt_voucher,
     )
     Base.metadata.create_all(bind=engine)

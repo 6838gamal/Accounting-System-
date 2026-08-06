@@ -28,7 +28,8 @@ class Client(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: __import__("datetime").datetime.now(__import__("datetime").timezone.utc).replace(tzinfo=None), nullable=False)
     created_by: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
 
-    # العلاقات
+    # العلاقات — lazy="dynamic" يتيح استخدام .limit()/.filter() في القوالب
+    # تحذير SADeprecationWarning مُكتَّم في pytest.ini؛ سيُعالج عند الترقية لـ SQLAlchemy 3
     contracts = relationship("Contract", back_populates="client", lazy="dynamic")
     quotations = relationship("Quotation", back_populates="client", lazy="dynamic")
     invoices = relationship("Invoice", back_populates="client", lazy="dynamic")

@@ -1,6 +1,7 @@
 """
 مسارات التقارير
 """
+import logging
 from datetime import date, datetime
 from io import BytesIO
 from fastapi import APIRouter, Request, Depends
@@ -15,6 +16,7 @@ from app.services.report_service import ReportService
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 templates = _shared_templates
+_logger = logging.getLogger(__name__)
 
 
 def _parse_date(value: Optional[str], fallback: date) -> date:
@@ -32,10 +34,6 @@ async def reports_index(request: Request):
     if not request.session.get("user_id"):
         return RedirectResponse(url="/auth/login", status_code=302)
     return templates.TemplateResponse("reports/index.html", {"request": request})
-
-
-import logging
-_logger = logging.getLogger(__name__)
 
 
 

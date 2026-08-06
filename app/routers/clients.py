@@ -2,6 +2,7 @@
 مسارات إدارة العملاء
 """
 import logging
+import re as _re
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.templates_config import templates as _shared_templates
@@ -11,6 +12,8 @@ from app.dependencies import get_db
 from app.services.client_service import ClientService
 from app.services.activity_service import ActivityService
 from app.models.client import ClientType
+
+_EMAIL_RE = _re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 templates = _shared_templates
@@ -76,10 +79,13 @@ async def create_client(
     if type not in _VALID_TYPES:
         return _form_error("نوع العميل غير صالح.")
 
-    # تنظيف الحقول الاختيارية
+    # تنظيف الحقول الاختيارية والتحقق من البريد الإلكتروني
     email = email.strip() if email else None
     phone = phone.strip() if phone else None
     tax_number = tax_number.strip() if tax_number else None
+
+    if email and not _EMAIL_RE.match(email):
+        return _form_error("صيغة البريد الإلكتروني غير صحيحة.")
 
     try:
         service = ClientService(db)
@@ -159,6 +165,9 @@ async def update_client(
     email = email.strip() if email else None
     phone = phone.strip() if phone else None
     tax_number = tax_number.strip() if tax_number else None
+
+    if email and not _EMAIL_RE.match(email):
+        return _form_error("صيغة البريد الإلكتروني غير صحيحة.")
 
     try:
         service.update(client_id, {

@@ -1,91 +1,73 @@
 # نظام المحاسبة السحابي
 
-نظام محاسبي ويب احترافي مبني بـ Python 3.12 / FastAPI مع واجهة عربية كاملة.
+نظام محاسبي ويب احترافي مبني بـ FastAPI و SQLAlchemy و Bootstrap 5 بدعم كامل للغة العربية.
 
-## Stack التقني
-
-| المكون | التقنية |
-|--------|---------|
-| Backend | Python 3.12 + FastAPI |
-| Templates | Jinja2 + Bootstrap 5 |
-| Database | SQLite + SQLAlchemy 2.x |
-| Migrations | Alembic |
-| Auth | Session-based + bcrypt |
-| PDF | ReportLab |
-| Excel | OpenPyXL |
-| Charts | Chart.js |
-| Tests | Pytest (236 tests) |
-
-## تشغيل التطبيق
+## تشغيل المشروع
 
 ```bash
-# تثبيت المتطلبات
-pip install -r requirements.txt
-
-# تشغيل التطبيق (يهيئ قاعدة البيانات تلقائياً)
 python main.py
 ```
 
-التطبيق يعمل على: http://0.0.0.0:5000
+التطبيق يعمل على المنفذ 5000.
 
-## بيانات الدخول الافتراضية
-
-- **المستخدم:** `admin`
-- **كلمة المرور:** `admin123` ← **يجب تغييرها فور التشغيل**
-
-## متغيرات البيئة المطلوبة
-
-يجب توفير المتغيرات التالية (عبر `.env` أو بيئة النظام):
-
-```
-SECRET_KEY=<سلسلة عشوائية ≥32 حرف>
-SESSION_SECRET=<سلسلة عشوائية ≥32 حرف>
-DEBUG=false
-```
+**بيانات الدخول الافتراضية:**
+- المستخدم: `admin`
+- كلمة المرور: `admin123`
+- **⚠️ يجب تغيير كلمة المرور فور التشغيل**
 
 ## تشغيل الاختبارات
 
 ```bash
-python -m pytest tests/ -v
-# 236 tests — 100% نجاح
+SECRET_KEY=test-key-at-least-32-chars SESSION_SECRET=test-session-at-least-32 python -m pytest tests/ -v
 ```
+
+**عدد الاختبارات:** 282 — 100% ناجحة
 
 ## هيكل المشروع
 
 ```
-├── app/
-│   ├── models/         — نماذج SQLAlchemy
-│   ├── routers/        — FastAPI endpoints
-│   ├── schemas/        — Pydantic schemas
-│   ├── services/       — Business logic
-│   ├── templates/      — Jinja2 HTML (RTL/Arabic)
-│   ├── static/         — CSS/JS/Images
-│   ├── core/           — Exceptions, CSRF, Rate Limiting, Logging
-│   ├── middleware/      — Security Headers, CSRF, Request Size
-│   ├── config.py       — Settings (Pydantic)
-│   ├── database.py     — SQLAlchemy engine + WAL mode
-│   └── main.py         — FastAPI app + middleware
-├── tests/
-│   ├── unit/           — خدمات + حالات حافة
-│   └── integration/    — كل الوحدات الوظيفية
-├── alembic/            — Database migrations
-├── AUDIT_REPORT.md     — تقرير المراجعة الشاملة
-├── requirements.txt
-└── main.py             — Entry point (port 5000)
+app/
+├── models/         نماذج قاعدة البيانات (SQLAlchemy)
+├── routers/        مسارات API والصفحات (FastAPI)
+├── schemas/        مخططات Pydantic
+├── services/       منطق الأعمال
+├── templates/      قوالب HTML (Jinja2 + Bootstrap 5)
+├── static/         CSS / JS / خطوط أميري
+├── core/           CSRF، Rate Limiting، Logging، Exceptions
+├── middleware/      Security Headers، Request Size، CSRF
+├── config.py       إعدادات pydantic-settings
+├── database.py     SQLAlchemy Engine + WAL mode
+└── main.py         FastAPI app entry point
+
+tests/
+├── integration/    اختبارات تكاملية (21 ملف)
+└── unit/           اختبارات الوحدات (4 ملفات)
 ```
+
+## المتغيرات البيئية المطلوبة
+
+| المتغير | الوصف | مطلوب |
+|---------|-------|--------|
+| `SECRET_KEY` | مفتاح التشفير (≥32 حرف) | نعم |
+| `SESSION_SECRET` | مفتاح الجلسة (≥32 حرف) | نعم |
+| `DEBUG` | وضع التطوير | اختياري (false) |
 
 ## الميزات الأمنية
 
-- CSRF protection على كل form
+- bcrypt لتشفير كلمات المرور
+- CSRF protection في جميع نماذج POST
+- Rate limiting (5 محاولات/دقيقة)
 - Session fixation protection
-- bcrypt password hashing
-- Rate limiting (5 محاولات/5 دقائق للدخول)
-- Security headers (CSP, X-Frame-Options, HSTS, nosniff)
-- لا stack traces للمستخدم النهائي
-- XSS protection (Jinja2 auto-escaping)
-- SQL Injection protection (SQLAlchemy ORM)
+- XSS protection عبر Jinja2 auto-escaping
+- SQL Injection protection عبر SQLAlchemy ORM
+- Security Headers: X-Frame-Options, CSP, HSTS
+- Request size limit: 5MB
+
+## توثيق المراجعة
+
+انظر `AUDIT_REPORT.md` للتقرير الشامل (التقييم الكلي: 90.5/100).
 
 ## User Preferences
 
-- اللغة العربية (RTL) هي اللغة الأساسية للواجهة والتعليقات
-- يفضل المستخدم المراجعات الشاملة والتقارير التفصيلية
+- اللغة العربية هي لغة الواجهة والكود التوثيقي
+- تشغيل الاختبارات بمتغيرات البيئة الوهمية (SECRET_KEY + SESSION_SECRET)
