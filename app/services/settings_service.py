@@ -21,6 +21,7 @@ DEFAULT_SETTINGS = {
     # هوية المؤسسة في الوثائق
     "company_logo": ("", "شعار الشركة (base64)"),
     "company_stamp": ("", "ختم الشركة (base64)"),
+    "company_signature": ("", "توقيع الشركة (base64 PNG بحبر أزرق)"),
     "pdf_primary_color": ("#2563eb", "لون العلامة التجارية في الوثائق"),
     "pdf_footer_text": ("", "نص التذييل في الوثائق"),
     "pdf_signatory_title": ("المدير العام", "لقب الموقِّع الأول"),

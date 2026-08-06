@@ -50,7 +50,8 @@ async def save_settings(
     service = SettingsService(db)
 
     # ─── 1. جمع الحقول النصية ───────────────────────────────────────────────
-    text_keys = {k for k in DEFAULT_SETTINGS if k not in ("company_logo", "company_stamp")}
+    _image_keys = {"company_logo", "company_stamp", "company_signature"}
+    text_keys = {k for k in DEFAULT_SETTINGS if k not in _image_keys}
     data: dict = {k: str(v) for k, v in form_data.items() if k in text_keys}
     if "pdf_show_signatures" in text_keys:
         data["pdf_show_signatures"] = "1" if "pdf_show_signatures" in form_data else "0"
@@ -58,6 +59,7 @@ async def save_settings(
     # ─── 2. التحقق من الشعار والختم قبل أي كتابة ───────────────────────────
     logo_value: Optional[str] = None   # None = لا تغيير، "" = حذف، "data:..." = جديد
     stamp_value: Optional[str] = None
+    sig_value: Optional[str] = None    # توقيع الشركة (data URI من canvas أو حذف)
 
     if remove_logo == "1":
         logo_value = ""
@@ -97,11 +99,21 @@ async def save_settings(
         mime = company_stamp_file.content_type
         stamp_value = f"data:{mime};base64,{base64.b64encode(content).decode()}"
 
+    # ─── التوقيع — يُرسَل كـ data URI من canvas أو يُحذف ────────────────────
+    remove_sig = form_data.get("remove_signature")
+    sig_data   = str(form_data.get("company_signature_data", "")).strip()
+    if remove_sig == "1":
+        sig_value = ""
+    elif sig_data.startswith("data:image/"):
+        sig_value = sig_data
+
     # ─── 3. دمج جميع القيم وحفظها في معاملة واحدة ───────────────────────────
     if logo_value is not None:
         data["company_logo"] = logo_value
     if stamp_value is not None:
         data["company_stamp"] = stamp_value
+    if sig_value is not None:
+        data["company_signature"] = sig_value
 
     try:
         service.save_all(data)

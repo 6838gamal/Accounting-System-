@@ -237,6 +237,57 @@
                         </div>
 
                     </div>
+
+                    <!-- ═══ توقيع الشركة ═══ -->
+                    <div class="row mt-3 pt-3 border-top g-3 align-items-start">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-pen me-1"></i>توقيع الشركة / المنشأة
+                            </label>
+                            <p class="text-muted small mb-3">
+                                ارسم التوقيع بالحبر الأزرق — سيظهر تلقائياً في كافة الفواتير والسندات والعقود عند الطباعة
+                            </p>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="border rounded" style="background:#fff; overflow:hidden; touch-action:none;">
+                                <canvas id="settingsSigCanvas" style="width:100%; height:150px; display:block; cursor:crosshair;"></canvas>
+                            </div>
+                            <div class="d-flex gap-2 mt-2 align-items-center">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="settingsSigClear()">
+                                    <i class="bi bi-eraser me-1"></i>مسح
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="settingsSigApply()">
+                                    <i class="bi bi-check2 me-1"></i>تطبيق التوقيع
+                                </button>
+                                <span id="settingsSigStatus" class="text-success small d-none fw-semibold">✓ جاهز للحفظ</span>
+                            </div>
+                            <div class="form-text mt-1">ارسم بالماوس أو اللمس — الحبر أزرق تلقائياً</div>
+                        </div>
+                        <div class="col-lg-3">
+                            {% set cur_sig = settings.get('company_signature', '') %}
+                            {% if cur_sig %}
+                            <div class="mb-2 p-2 border rounded text-center" style="background:#f8fafc;" id="currentSigBox">
+                                <p class="small text-muted mb-1">التوقيع الحالي</p>
+                                <img src="{{ cur_sig }}" id="currentSigImg"
+                                     style="max-height:80px; max-width:100%; object-fit:contain;">
+                                <div class="mt-2">
+                                    <label class="d-flex align-items-center gap-2 justify-content-center small text-danger">
+                                        <input type="checkbox" name="remove_signature" value="1" id="removeSig">
+                                        حذف التوقيع الحالي
+                                    </label>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div id="newSigPreviewBox" class="p-2 border rounded text-center d-none" style="background:#f8fafc;">
+                                <p class="small text-muted mb-1">معاينة</p>
+                                <img id="newSigPreviewImg" src=""
+                                     style="max-height:80px; max-width:100%; object-fit:contain;">
+                            </div>
+                            {% endif %}
+                        </div>
+                        <input type="hidden" name="company_signature_data" id="settingsSigData" value="">
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -252,7 +303,47 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script>
+// ═══ لوحة توقيع الشركة في الإعدادات ═══
+let settingsSigPad;
+
+window.addEventListener('load', function() {
+    const canvas = document.getElementById('settingsSigCanvas');
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = canvas.offsetWidth  * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    canvas.getContext('2d').scale(dpr, dpr);
+    settingsSigPad = new SignaturePad(canvas, { penColor: '#0055cc', minWidth: 1.5, maxWidth: 3 });
+});
+
+function settingsSigClear() {
+    if (settingsSigPad) settingsSigPad.clear();
+    document.getElementById('settingsSigData').value = '';
+    const s = document.getElementById('settingsSigStatus');
+    if (s) s.classList.add('d-none');
+}
+
+function settingsSigApply() {
+    if (!settingsSigPad || settingsSigPad.isEmpty()) {
+        alert('الرجاء رسم التوقيع أولاً');
+        return;
+    }
+    const src = settingsSigPad.toDataURL('image/png');
+    document.getElementById('settingsSigData').value = src;
+    // معاينة (حالة بلا توقيع سابق)
+    const nb = document.getElementById('newSigPreviewBox');
+    const ni = document.getElementById('newSigPreviewImg');
+    if (nb && ni) { ni.src = src; nb.classList.remove('d-none'); }
+    // تحديث صورة التوقيع الحالي إن وجد
+    const ci = document.getElementById('currentSigImg');
+    if (ci) ci.src = src;
+    // إظهار علامة جاهز
+    const s = document.getElementById('settingsSigStatus');
+    if (s) { s.textContent = '✓ جاهز للحفظ'; s.classList.remove('d-none'); }
+}
+
 // معاينة الشعار قبل الرفع
 document.getElementById('logoInput').addEventListener('change', function(e) {
     const file = e.target.files[0];

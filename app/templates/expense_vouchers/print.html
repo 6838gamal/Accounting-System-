@@ -278,6 +278,7 @@
 <script>
 const SEP_KEY = 'sep_company';
 const SEP_SETTINGS_STAMP = '{{ settings.get("company_stamp", "") | e }}';
+const SEP_SETTINGS_SIG   = '{{ settings.get("company_signature", "") | e }}';
 let sepSigPad;
 function sepToggle() { document.getElementById('sepPanel').classList.toggle('open'); }
 function sepInitCanvas() { const c = document.getElementById('sepSigCanvas'), dpr = window.devicePixelRatio || 1; c.width = c.offsetWidth * dpr; c.height = 100 * dpr; c.getContext('2d').scale(dpr, dpr); sepSigPad = new SignaturePad(c, { penColor: '#0055cc', minWidth: 1, maxWidth: 2.5 }); }
@@ -297,7 +298,8 @@ function sepLoad() {
             document.getElementById('sepRemoveStampBtn').style.display = data.stamp ? 'block' : 'none';
             sepShowInDoc('docStampImg', stampSrc);
         }
-        if (data.signature) { sepShowInDoc('docSigImg', data.signature); }
+        const sigSrc = data.signature || SEP_SETTINGS_SIG || null;
+        if (sigSrc) { sepShowInDoc('docSigImg', sigSrc); }
     } catch(e) {}
 }
 window.addEventListener('load', function() { sepInitCanvas(); sepLoad(); });
